@@ -150,11 +150,24 @@ input:focus{outline:none;border-color:var(--vermelho)}
 #alvo{width:min(62vw,280px);aspect-ratio:1;border:none;padding:0;background:none;cursor:pointer;
   position:relative;margin-top:-62px;z-index:1}
 #alvo canvas{width:100%;height:100%;display:block}
-#alvo.abocanhado{animation:aboca .19s ease-out}
+#alvo.abocanhado{animation:aboca .16s ease-out}
 @keyframes aboca{
-  0%{transform:translateY(0) rotate(0)}
-  40%{transform:translateY(-26px) rotate(-5deg) scale(.96)}
-  100%{transform:translateY(0) rotate(0)}
+  0%{transform:translate(0,0)}
+  45%{transform:translate(0,-7px) scale(.985)}
+  100%{transform:translate(0,0)}
+}
+/* o pedaço arrancado voa até a boca e some lá dentro */
+.pedaco{position:absolute;border-radius:46% 54% 42% 58%/56% 42% 58% 44%;pointer-events:none;z-index:3;
+  background:
+    radial-gradient(circle at 32% 34%, #4a2a12 0 17%, transparent 18%),
+    radial-gradient(circle at 70% 62%, #4a2a12 0 13%, transparent 14%),
+    radial-gradient(circle at 34% 28%, #e3b685, #b2793f 60%, #7a4619);
+  box-shadow:inset -2px -3px 5px rgba(0,0,0,.3);
+  animation:engole .2s cubic-bezier(.4,.02,.7,.65) forwards}
+@keyframes engole{
+  0%  {transform:translate(0,0) scale(1) rotate(0);opacity:1}
+  70% {transform:translate(var(--tx),var(--ty)) scale(.42) rotate(120deg);opacity:1}
+  100%{transform:translate(var(--tx),var(--ty)) scale(.08) rotate(160deg);opacity:0}
 }
 .migalha{position:absolute;border-radius:50%;background:#a5702f;pointer-events:none;
   animation:voa .6s ease-out forwards}
@@ -494,7 +507,7 @@ function verificarLimite(){
    Zerou o cookie → próximo, regenerando mais rápido.
    A massa voltou ao inteiro → acabou.                                   */
 var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
-var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0;
+var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0;
 
 function cfgRodada(n){
   var base=C.MORDIDAS_BASE||24, passo=C.MORDIDAS_PASSO||4;
@@ -566,7 +579,7 @@ function pararJogo(){
   rodando=false; cancelAnimationFrame(raf); clearInterval(tCont);
   var c=$("cont"); if(c) c.remove();
   $("j-barra").classList.remove("perigo");
-  clearTimeout(fechaBoca); $("urso").classList.remove("comendo");
+  clearTimeout(fechaBoca); clearTimeout(abreBoca); $("urso").classList.remove("comendo");
 }
 
 $("alvo").addEventListener("pointerdown",function(e){
@@ -577,16 +590,10 @@ $("alvo").addEventListener("pointerdown",function(e){
   mordidasFeitas++;
   $("j-pts").textContent=mordidasFeitas;
 
-  /* o cookie sobe até a boca, o urso abre a boca e mastiga, migalhas voam */
+  /* arranca um pedaço e manda pra dentro da boca */
   var a=$("alvo"), u=$("urso");
   a.classList.remove("abocanhado"); void a.offsetWidth; a.classList.add("abocanhado");
-  u.classList.remove("mastiga");    void u.offsetWidth; u.classList.add("mastiga");
-  u.classList.add("comendo");
-  clearTimeout(fechaBoca);
-  fechaBoca=setTimeout(function(){ u.classList.remove("comendo"); },130);
-
-  var z=$("zona").getBoundingClientRect(), ra=a.getBoundingClientRect();
-  migalhas(ra.left-z.left+ra.width/2, ra.top-z.top+ra.height*0.18);
+  voarPedaco();
 
   if(massa<=0){
     comidos++;
@@ -673,6 +680,44 @@ function desenhar(){
   ctx.strokeStyle="rgba(92,52,20,.75)"; ctx.lineWidth=S*0.018;
   ctx.beginPath(); ctx.arc(cx,cy,R-S*0.009,0,6.2832); ctx.stroke();
   ctx.restore();
+}
+
+/* ---------- o pedaço arrancado vai pra boca ---------- */
+var BOCA_X=0.50, BOCA_Y=0.305;   /* onde fica a boca dentro da arte do urso */
+
+function voarPedaco(){
+  var z=$("zona").getBoundingClientRect();
+  var ra=$("alvo").getBoundingClientRect(), ru=$("urso").getBoundingClientRect();
+
+  /* nasce na beirada que está sendo mordida, no alto do cookie */
+  var raio=ra.width*0.46;
+  var cxA=ra.left-z.left+ra.width/2, cyA=ra.top-z.top+ra.height/2;
+  var ang=mordidas.dir + (Math.random()-0.5)*0.9;
+  var ox=cxA+Math.cos(ang)*raio*0.86, oy=cyA+Math.sin(ang)*raio*0.86;
+
+  var bx=ru.left-z.left+ru.width*BOCA_X, by=ru.top-z.top+ru.height*BOCA_Y;
+  var tam=ra.width*0.17;
+
+  var p=document.createElement("i");
+  p.className="pedaco";
+  p.style.width=p.style.height=tam.toFixed(0)+"px";
+  p.style.left=(ox-tam/2).toFixed(0)+"px";
+  p.style.top =(oy-tam/2).toFixed(0)+"px";
+  p.style.setProperty("--tx",(bx-ox).toFixed(0)+"px");
+  p.style.setProperty("--ty",(by-oy).toFixed(0)+"px");
+  $("zona").appendChild(p);
+  setTimeout(function(){ p.remove(); },230);
+
+  migalhas(ox,oy);
+
+  /* a boca abre no instante em que o pedaço chega */
+  clearTimeout(abreBoca); clearTimeout(fechaBoca);
+  var u=$("urso");
+  abreBoca=setTimeout(function(){
+    u.classList.add("comendo");
+    u.classList.remove("mastiga"); void u.offsetWidth; u.classList.add("mastiga");
+    fechaBoca=setTimeout(function(){ u.classList.remove("comendo"); },160);
+  },120);
 }
 
 /* ---------- migalhas ---------- */
