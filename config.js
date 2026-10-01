@@ -4,7 +4,7 @@
 // Supabase > Project Settings > API
 // ============================================================
 window.CONFIG = {
-  SUPABASE_URL: "https://kambbbxadbluduinjpao.supabase.co/rest/v1/",            // ex.: https://abcdefgh.supabase.co
+  SUPABASE_URL: "https://kambbbxadbluduinjpao.supabase.co",            // ex.: https://abcdefgh.supabase.co
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthbWJiYnhhZGJsdWR1aW5qcGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3OTM4NTAsImV4cCI6MjEwNjM2OTg1MH0.c4NwztzLuYlz93Iy2uP0jma3Y0t35kMvNTwdbEMVt5A",       // a chave "anon public"
 
   SENHA_PAINEL: "1012",        // senha do painel da loja
