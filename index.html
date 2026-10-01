@@ -6,7 +6,7 @@
 <title>Guerra dos Cookies — Clandestino Cookies</title>
 <meta name="theme-color" content="#0B0B0B">
 <meta property="og:title" content="Guerra dos Cookies — Clandestino Cookies">
-<meta property="og:description" content="Confete contra Granulado. Comprou cookie, entrou na guerra.">
+<meta property="og:description" content="Confete contra Granulado. O sabor que vencer entra no cardápio fixo.">
 <link rel="icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -124,17 +124,22 @@ input:focus{outline:none;border-color:var(--vermelho)}
 .erro{color:var(--vermelho);font-size:.85rem;font-weight:500}
 
 /* jogo */
-#t-jogo{justify-content:space-between}
+#t-jogo{justify-content:space-between;gap:14px}
 .hud{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .hud .big{font-family:var(--ui);font-weight:700;font-size:clamp(1.7rem,9vw,2.6rem);line-height:1;font-variant-numeric:tabular-nums}
-.tempo{height:10px;background:#000;border:2px solid var(--traco);overflow:hidden}
-.tempo>i{display:block;height:100%;width:100%;background:var(--vermelho)}
-.zona{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:250px;
-  touch-action:manipulation;user-select:none;-webkit-user-select:none}
-#alvo{width:min(70vw,320px);aspect-ratio:1;border:none;padding:0;background:none;cursor:pointer;
-  transition:transform .05s;position:relative}
-#alvo img{width:100%}
-#alvo.hit{transform:scale(.92)}
+.tempo{height:14px;background:#000;border:2px solid var(--traco);overflow:hidden;position:relative}
+.tempo>i{display:block;height:100%;width:0%;background:var(--vermelho);transition:width .09s linear}
+.tempo.perigo{border-color:var(--vermelho)}
+.tempo.perigo>i{animation:pisca .45s infinite}
+@keyframes pisca{50%{opacity:.35}}
+.zona{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  position:relative;min-height:260px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#urso{width:min(34vw,150px);transition:transform .08s;transform-origin:50% 100%}
+#urso.mastiga{transform:scale(1.07,.93)}
+#alvo{width:min(62vw,280px);aspect-ratio:1;border:none;padding:0;background:none;cursor:pointer;
+  transition:transform .05s;position:relative;margin-top:-6px}
+#alvo canvas{width:100%;height:100%;display:block}
+#alvo.hit{transform:scale(.95)}
 .faisca{position:absolute;font-family:var(--ui);font-weight:700;font-size:1.3rem;pointer-events:none;
   animation:sobe .7s ease-out forwards}
 @keyframes sobe{to{transform:translateY(-80px);opacity:0}}
@@ -212,11 +217,11 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
   </div>
 
   <div class="bloco">
-    <div class="rot">Melhores batalhas</div>
+    <div class="rot">Maiores devoradores</div>
     <ol class="lista" id="l-batedores"></ol>
   </div>
 
-  <p class="nota">Comprou um cookie, ganhou o link do seu time. Cada cookie vale 100 pontos + o que você bater na batalha.</p>
+  <p class="nota">O sabor que vencer entra no cardápio fixo da loja. Cada cookie vendido vale 150 pontos, mais o que você comer no jogo.</p>
 
   <div class="rodape"><button class="btn vazio" id="b-painel-ir">Painel da loja</button></div>
 </section>
@@ -230,14 +235,14 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <div class="tag" id="porta-tag">TIME CONFETE</div>
     <p class="nota" id="porta-txt" style="max-width:34ch"></p>
   </div>
-  <button class="btn" id="b-porta">Entrar na batalha</button>
+  <button class="btn" id="b-porta">Alimentar o urso</button>
   <div class="rodape"><button class="btn vazio" data-ir="t-placar">Ver o placar</button></div>
 </section>
 
 <!-- CADASTRO -->
 <section class="tela" id="t-entrar">
   <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
-  <h2 id="ent-tit">Quem tá batendo?</h2>
+  <h2 id="ent-tit">Quem vai alimentar o urso?</h2>
   <div>
     <label for="i-nome">Seu nome</label>
     <input id="i-nome" maxlength="30" autocomplete="name" placeholder="Ex.: Lulu">
@@ -246,9 +251,10 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <label for="i-zap">WhatsApp com DDD</label>
     <input id="i-zap" type="tel" inputmode="numeric" maxlength="16" autocomplete="tel" placeholder="17 99999 9999">
   </div>
-  <p class="nota">O WhatsApp junta todas as suas compras no ranking de top compradores. Usamos só para o sorteio da campanha.</p>
+  <p class="nota">O WhatsApp junta todas as suas compras no ranking de top compradores. Não mandamos mensagem.</p>
+  <p class="nota">Toque no cookie sem parar para o urso comer. Se você parar, a massa volta — e quando ela volta inteira, acabou.</p>
   <p class="erro" id="ent-erro" hidden></p>
-  <button class="btn" id="b-entrar">Bora batalhar</button>
+  <button class="btn" id="b-entrar">Bora comer</button>
   <div class="rodape"><button class="btn vazio" data-ir="t-placar">Ver o placar</button></div>
 </section>
 
@@ -266,15 +272,16 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 <!-- JOGO -->
 <section class="tela" id="t-jogo">
   <div class="hud">
-    <div><div class="rot" id="j-time">Time</div><div class="big" id="j-nome">—</div></div>
-    <div style="text-align:right"><div class="rot">Pontos</div><div class="big" id="j-pts">0</div></div>
+    <div><div class="rot" id="j-cookies">Cookie 1</div><div class="big" id="j-nome">—</div></div>
+    <div style="text-align:right"><div class="rot">Mordidas</div><div class="big" id="j-pts">0</div></div>
   </div>
-  <div class="tempo"><i id="j-tempo"></i></div>
+  <div class="tempo" id="j-barra"><i id="j-tempo"></i></div>
   <div class="zona" id="zona">
     <div class="combo" id="combo"></div>
-    <button id="alvo" aria-label="Bater no cookie"><img src="urso.png" alt=""></button>
+    <img id="urso" src="urso.png" alt="">
+    <button id="alvo" aria-label="Dar uma mordida no cookie"><canvas id="cv" width="320" height="320"></canvas></button>
   </div>
-  <p class="nota" style="text-align:center">Bate rápido. Sequência colada dá bônus.</p>
+  <p class="nota" style="text-align:center" id="j-dica">Toca sem parar. Se você parar, a massa volta.</p>
 </section>
 
 <!-- RESULTADO -->
@@ -338,8 +345,8 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 "use strict";
 var C = window.CONFIG || {};
 var TIMES = {
-  confete:   { nome:"CONFETE",   cor:"var(--vermelho)", classe:"cf", frase:"Vermelho é sangue de confeiteiro. Bate no cookie e empurra a corda." },
-  granulado: { nome:"GRANULADO", cor:"var(--dourado)",  classe:"gr", frase:"Dourado não pede licença. Bate no cookie e empurra a corda." }
+  confete:   { nome:"CONFETE",   cor:"var(--vermelho)", classe:"cf", frase:"O urso tá com fome. Cada mordida empurra o confete pro cardápio." },
+  granulado: { nome:"GRANULADO", cor:"var(--dourado)",  classe:"gr", frase:"O urso tá com fome. Cada mordida empurra o granulado pro cardápio." }
 };
 var sb=null, timeAtual=null, jogadorId=null, jogadorNome=null, deviceId=null;
 
@@ -412,7 +419,7 @@ function cadastrar(){
   var b=$("b-entrar"); b.disabled=true; b.textContent="Entrando…";
 
   sb.rpc("entrar",{p_nome:nome,p_whatsapp:zap}).then(function(r){
-    b.disabled=false; b.textContent="Bora batalhar";
+    b.disabled=false; b.textContent="Bora comer";
     if(r.error){ e.textContent="Não deu pra entrar agora. Tenta de novo."; e.hidden=false; return; }
     jogadorId=r.data; jogadorNome=nome;
     ls("cc_jogador",jogadorId); ls("cc_nome",nome);
@@ -425,28 +432,49 @@ function verificarLimite(){
   sb.rpc("jogadas_hoje",{p_device:deviceId}).then(function(r){
     var n = r.error ? 0 : (r.data||0);
     if(n >= (C.LIMITE_POR_APARELHO_DIA||4)){
-      $("bloq-txt").textContent="Este celular já jogou "+n+" batalhas hoje. Volta amanhã com outro cookie — ou passa o link pra alguém do seu time.";
+      $("bloq-txt").textContent="Este celular já jogou "+n+" vezes hoje. Volta amanhã com outro cookie — ou passa o link pra alguém do seu time.";
       ir("t-bloqueio"); return;
     }
     iniciar();
   });
 }
 
-/* ---------- jogo ---------- */
-var rodando=false, fimEm=0, raf=0, pts=0, ultimo=0, combo=0, tCont=0;
+/* ---------- jogo: o urso come o cookie ----------
+   Cada toque arranca uma mordida. A massa se regenera sozinha.
+   Zerou o cookie → próximo, regenerando mais rápido.
+   A massa voltou ao inteiro → acabou.                                   */
+var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
+var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0;
+
+function cfgRodada(n){
+  var base=C.MORDIDAS_BASE||24, passo=C.MORDIDAS_PASSO||4;
+  var r0=C.REGEN_BASE||0.05, fator=C.REGEN_FATOR||1.16;
+  return { mordidas: base + passo*(n-1), regen: r0 * Math.pow(fator, n-1) };
+}
+
 function iniciar(){
   var T=TIMES[timeAtual];
-  pts=0; combo=0; ultimo=0;
+  rodada=0; comidos=0; mordidasFeitas=0; tJogo=0;
   $("j-nome").textContent=jogadorNome||"Você";
-  $("j-time").textContent="Time "+T.nome;
-  $("j-time").style.color=T.cor;
   $("j-pts").textContent="0";
-  $("j-tempo").style.width="100%";
   $("j-tempo").style.background=T.cor;
+  $("j-dica").textContent="Toca sem parar. Se você parar, a massa volta.";
   $("combo").classList.remove("on");
+  novaRodada();
   ir("t-jogo");
   contar(3);
 }
+
+function novaRodada(){
+  rodada++;
+  var c=cfgRodada(rodada);
+  mordidasRodada=c.mordidas; regen=c.regen;
+  massa = C.MASSA_INICIAL || 0.88;
+  sortearMordidas(mordidasRodada);
+  $("j-cookies").textContent = "Cookie "+rodada;
+  desenhar();
+}
+
 function contar(n){
   var d=document.createElement("div");
   d.className="contagem"; d.id="cont"; d.textContent=n;
@@ -456,57 +484,140 @@ function contar(n){
   tCont=setInterval(function(){
     v--;
     if(v>0) d.textContent=v;
-    else if(v===0) d.textContent="JÁ!";
-    else { clearInterval(tCont); d.remove(); rodando=true; fimEm=performance.now()+(C.SEGUNDOS_BATALHA||12)*1000; loop(); }
+    else if(v===0) d.textContent="COME!";
+    else {
+      clearInterval(tCont); d.remove();
+      rodando=true; ultimoQuadro=performance.now(); loop();
+    }
   },700);
 }
+
 function loop(){
   if(!rodando) return;
-  var total=(C.SEGUNDOS_BATALHA||12)*1000;
-  var resta=fimEm-performance.now();
-  if(resta<=0){ terminar(); return; }
-  $("j-tempo").style.width=(resta/total*100)+"%";
-  if(performance.now()-ultimo>900 && combo>0){ combo=0; $("combo").classList.remove("on"); }
+  var agora=performance.now();
+  var dt=Math.min((agora-ultimoQuadro)/1000, 0.1);
+  ultimoQuadro=agora;
+  tJogo+=dt;
+
+  /* o urso fica mais faminto com o tempo: nenhuma partida dura para sempre */
+  var fome = regen * (1 + tJogo/(C.ACELERA_FOME||30));
+  massa += fome*dt;
+  if(massa>=1){ massa=1; desenhar(); terminar(); return; }
+
+  desenhar();
+  var b=$("j-barra");
+  $("j-tempo").style.width=(massa*100).toFixed(1)+"%";
+  if(massa>0.82) b.classList.add("perigo"); else b.classList.remove("perigo");
+
   raf=requestAnimationFrame(loop);
 }
+
 function pararJogo(){
   rodando=false; cancelAnimationFrame(raf); clearInterval(tCont);
   var c=$("cont"); if(c) c.remove();
+  $("j-barra").classList.remove("perigo");
 }
+
 $("alvo").addEventListener("pointerdown",function(e){
   if(!rodando) return;
   e.preventDefault();
-  var agora=performance.now();
-  combo = (agora-ultimo<320) ? combo+1 : 0;
-  ultimo=agora;
-  var ganho = combo>=20 ? 3 : combo>=8 ? 2 : 1;
-  pts+=ganho;
-  $("j-pts").textContent=pts;
-  if(combo>=8){ $("combo").textContent="COMBO x"+ganho; $("combo").classList.add("on"); }
-  var a=$("alvo"); a.classList.add("hit"); setTimeout(function(){ a.classList.remove("hit"); },55);
-  faisca(e,ganho);
+
+  massa -= 1/mordidasRodada;
+  mordidasFeitas++;
+  $("j-pts").textContent=mordidasFeitas;
+
+  var a=$("alvo"); a.classList.add("hit"); setTimeout(function(){ a.classList.remove("hit"); },50);
+  var u=$("urso"); u.classList.add("mastiga"); setTimeout(function(){ u.classList.remove("mastiga"); },80);
+  faisca(e,"+1");
+
+  if(massa<=0){
+    comidos++;
+    $("combo").textContent="COOKIE INTEIRO!";
+    $("combo").classList.add("on");
+    setTimeout(function(){ $("combo").classList.remove("on"); },1100);
+    $("j-dica").textContent = rodada>=4 ? "Esse vem mais teimoso." : "Mais um. Esse volta mais rápido.";
+    novaRodada();
+  }
+  desenhar();
 },{passive:false});
 
-function faisca(e,ganho){
+function faisca(e,txt){
   var z=$("zona"), r=z.getBoundingClientRect();
   var s=document.createElement("div");
-  s.className="faisca"; s.textContent="+"+ganho;
-  s.style.color = ganho>1 ? "var(--dourado)" : "var(--creme)";
+  s.className="faisca"; s.textContent=txt;
+  s.style.color="var(--creme)";
   s.style.left=(e.clientX-r.left-10)+"px";
   s.style.top=(e.clientY-r.top-16)+"px";
   z.appendChild(s);
   setTimeout(function(){ s.remove(); },700);
 }
 
+/* ---------- desenho do cookie ---------- */
+var cv=$("cv"), ctx=cv.getContext("2d"), mordidas=[], gotas=[];
+(function(){
+  for(var i=0;i<9;i++){
+    var ang=i*2.399, rr=0.22+0.42*((i*0.37)%1);
+    gotas.push({ x:0.5+Math.cos(ang)*rr*0.78, y:0.5+Math.sin(ang)*rr*0.78, r:0.035+0.022*((i*0.61)%1) });
+  }
+})();
+function sortearMordidas(n){
+  mordidas=[];
+  for(var i=0;i<n;i++){
+    var ang=i*2.399 + rodada*0.9;
+    var prof=i/n;
+    var dist=0.50 - 0.30*prof;
+    mordidas.push({ ang:ang, dist:dist, r:0.115 + 0.03*((i*0.53)%1) });
+  }
+}
+function desenhar(){
+  var S=cv.width, cx=S/2, cy=S/2, R=S*0.46;
+  ctx.clearRect(0,0,S,S);
+
+  var comidas=Math.min(mordidas.length, Math.max(0, Math.round((1-massa)*mordidasRodada)));
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,6.2832); ctx.closePath();
+  ctx.clip();
+
+  var g=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.1,cx,cy,R);
+  g.addColorStop(0,"#d9a874"); g.addColorStop(0.62,"#b2793f"); g.addColorStop(1,"#7d4a1f");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,S,S);
+
+  ctx.fillStyle="#4a2a12";
+  gotas.forEach(function(d){
+    ctx.beginPath(); ctx.arc(d.x*S,d.y*S,d.r*S,0,6.2832); ctx.fill();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation="destination-out";
+  for(var i=0;i<comidas;i++){
+    var m=mordidas[i];
+    var mx=cx+Math.cos(m.ang)*m.dist*S, my=cy+Math.sin(m.ang)*m.dist*S;
+    ctx.beginPath(); ctx.arc(mx,my,m.r*S,0,6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
 function terminar(){
   pararJogo();
-  var T=TIMES[timeAtual], bonus=C.BONUS_POR_COOKIE||100, total=pts+bonus;
+  var T=TIMES[timeAtual], teto=C.TETO_PONTOS||300;
+  var porMordida=C.PONTOS_POR_MORDIDA||0.5, porCookie=C.BONUS_POR_COOKIE_COMIDO||10;
+  pts = Math.min(teto, Math.round(mordidasFeitas*porMordida) + comidos*porCookie);
+  var bonus=C.BONUS_POR_COOKIE||150, total=pts+bonus;
+
   $("f-time").textContent="Time "+T.nome;
   $("f-time").style.color=T.cor;
   $("f-pts").textContent=total;
   $("f-pts").style.color=T.cor;
-  $("f-det").textContent=pts+" toques + "+bonus+" de bônus pelo cookie. Tudo foi pro time "+T.nome.toLowerCase()+".";
-  $("f-msg").textContent = pts>=110 ? "Mão de metralhadora!" : pts>=80 ? "Bateu forte!" : pts>=45 ? "Boa batida!" : "Valeu pela força!";
+  $("f-det").textContent = mordidasFeitas+" mordidas em "+comidos+
+    (comidos===1?" cookie inteiro":" cookies inteiros")+" viraram "+pts+
+    " pontos, mais "+bonus+" pelo cookie que você comprou.";
+  $("f-msg").textContent = pts>=teto ? "Pontuação máxima!" :
+                           comidos>=5 ? "Urso faminto!" :
+                           comidos>=3 ? "Comeu bem!" :
+                           comidos>=1 ? "Boa mordida!" : "Valeu pela força!";
   $("f-erro").hidden=true;
   ir("t-fim");
 
@@ -520,7 +631,7 @@ function terminar(){
 }
 $("b-zap").addEventListener("click",function(){
   var T=TIMES[timeAtual]||TIMES.confete;
-  var txt="Entrei no TIME "+T.nome+" na Guerra dos Cookies da Clandestino! Compra um cookie e vem me ajudar: "+location.origin+location.pathname;
+  var txt="Alimentei o urso pelo TIME "+T.nome+"! Se esse sabor ganhar, entra no cardápio fixo da Clandestino. Compra um cookie e vem comer: "+location.origin+location.pathname;
   location.href="https://wa.me/?text="+encodeURIComponent(txt);
 });
 
@@ -552,7 +663,7 @@ function carregarPlacar(){
     pintar($("l-batedores"), r.data||[], function(x){
       return { nome:x.nome, sub:x.time==="confete"?"Confete":"Granulado", time:x.time,
                val:x.pontos, unidade:"pts" };
-    }, "Nenhuma batalha ainda.");
+    }, "Ninguém alimentou o urso ainda.");
   });
 
   var alvo=new Date((C.DATA_APURACAO||"2026-10-12")+"T23:59:59-03:00");
