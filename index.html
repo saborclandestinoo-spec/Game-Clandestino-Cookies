@@ -374,7 +374,24 @@ function boot(){
   jogadorId = ls("cc_jogador"); jogadorNome = ls("cc_nome");
 
   if(!C.SUPABASE_URL || !C.SUPABASE_ANON_KEY){ ir("t-config"); return; }
-  sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+
+  /* a URL tem que ser só https://<projeto>.supabase.co — corta barra e caminho extra */
+  var url = String(C.SUPABASE_URL).trim();
+  var m = url.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.(co|in)/i);
+  if(m){
+    url = "https://" + m[1] + ".supabase." + m[2];
+  } else {
+    var ref = url.match(/\/project\/([a-z0-9]{16,})/i);
+    if(ref){ url = "https://" + ref[1] + ".supabase.co"; }
+    else {
+      $("t-config").querySelector(".aviso").innerHTML =
+        "O endereço em <strong>SUPABASE_URL</strong> não parece ser o certo.<br>" +
+        "Use apenas <code>https://seuprojeto.supabase.co</code>, sem barra no fim e sem nada depois do <code>.co</code>.<br>" +
+        "Ele fica em Supabase &rsaquo; Project Settings &rsaquo; API &rsaquo; Project URL.";
+      ir("t-config"); return;
+    }
+  }
+  sb = window.supabase.createClient(url, String(C.SUPABASE_ANON_KEY).trim());
 
   var p = new URLSearchParams(location.search);
   var t = (p.get("t")||"").toLowerCase();
