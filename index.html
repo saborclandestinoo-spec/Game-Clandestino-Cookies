@@ -420,7 +420,16 @@ function cadastrar(){
 
   sb.rpc("entrar",{p_nome:nome,p_whatsapp:zap}).then(function(r){
     b.disabled=false; b.textContent="Bora comer";
-    if(r.error){ e.textContent="Não deu pra entrar agora. Tenta de novo."; e.hidden=false; return; }
+    if(r.error){
+      console.error("[guerra] erro no entrar:", r.error);
+      var m=(r.error.message||"")+" "+(r.error.hint||"")+" "+(r.error.details||"");
+      e.textContent = /nome_curto/.test(m) ? "Escreve um nome com 2 letras ou mais."
+        : /whatsapp_invalido/.test(m) ? "WhatsApp precisa de DDD + número."
+        : /function|schema cache|does not exist|404/i.test(m) ? "O banco ainda não tem a função entrar. Rode o supabase.sql de novo."
+        : /permission|denied|row-level/i.test(m) ? "O banco recusou o cadastro. Confira as permissões no supabase.sql."
+        : "Erro do banco: "+(r.error.message||"sem mensagem");
+      e.hidden=false; return;
+    }
     jogadorId=r.data; jogadorNome=nome;
     ls("cc_jogador",jogadorId); ls("cc_nome",nome);
     verificarLimite();
