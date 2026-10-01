@@ -169,6 +169,37 @@ input:focus{outline:none;border-color:var(--vermelho)}
   70% {transform:translate(var(--tx),var(--ty)) scale(.42) rotate(120deg);opacity:1}
   100%{transform:translate(var(--tx),var(--ty)) scale(.08) rotate(160deg);opacity:0}
 }
+/* multiplicador no topo */
+.mult{display:inline-block;background:var(--dourado);color:#000;font-weight:700;
+  padding:1px 7px;margin-left:5px;letter-spacing:.06em;font-size:.78rem;vertical-align:1px}
+.mult.subiu{animation:multSobe .5s ease-out}
+@keyframes multSobe{0%{transform:scale(1)}35%{transform:scale(1.55)}100%{transform:scale(1)}}
+
+/* o ganho que sobe a cada toque */
+.ganho{position:absolute;font-family:var(--ui);font-weight:700;font-size:1.35rem;
+  pointer-events:none;z-index:4;animation:sobeGanho .62s ease-out forwards}
+@keyframes sobeGanho{
+  0%{transform:translateY(0) scale(.8);opacity:0}
+  18%{transform:translateY(-10px) scale(1.12);opacity:1}
+  100%{transform:translateY(-62px) scale(1);opacity:0}
+}
+
+/* banner da virada de fase */
+.fase{position:absolute;left:50%;top:13%;transform:translate(-50%,-50%);z-index:6;
+  text-align:center;pointer-events:none;animation:faseIn 1.25s ease-out forwards;
+  background:rgba(11,11,11,.82);padding:10px 22px;border:2px solid var(--dourado)}
+.fase b{display:block;font-family:var(--display);font-size:clamp(2.2rem,11vw,3.4rem);
+  line-height:1;color:var(--dourado);text-shadow:0 4px 0 rgba(0,0,0,.6)}
+.fase span{display:block;font-family:var(--ui);font-weight:700;font-size:.7rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--creme);margin-top:4px;white-space:nowrap}
+@keyframes faseIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}
+  32%{transform:translate(-50%,-50%) scale(1)}
+  78%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-78%) scale(.92)}
+}
+
 .migalha{position:absolute;border-radius:50%;background:#a5702f;pointer-events:none;
   animation:voa .6s ease-out forwards}
 @keyframes voa{
@@ -177,9 +208,6 @@ input:focus{outline:none;border-color:var(--vermelho)}
 .faisca{position:absolute;font-family:var(--ui);font-weight:700;font-size:1.3rem;pointer-events:none;
   animation:sobe .7s ease-out forwards}
 @keyframes sobe{to{transform:translateY(-80px);opacity:0}}
-.combo{position:absolute;top:0;left:50%;transform:translateX(-50%);font-family:var(--display);
-  font-size:1.2rem;color:var(--dourado);opacity:0;transition:opacity .2s}
-.combo.on{opacity:1}
 .contagem{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
   background:rgba(11,11,11,.96);font-family:var(--display);font-size:clamp(5rem,32vw,13rem);color:var(--vermelho)}
 
@@ -307,11 +335,13 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 <section class="tela" id="t-jogo">
   <div class="hud">
     <div><div class="rot" id="j-cookies">Cookie 1</div><div class="big" id="j-nome">—</div></div>
-    <div style="text-align:right"><div class="rot">Mordidas</div><div class="big" id="j-pts">0</div></div>
+    <div style="text-align:right">
+      <div class="rot">Pontos <b class="mult" id="j-mult">x1</b></div>
+      <div class="big" id="j-pts">0</div>
+    </div>
   </div>
   <div><div class="rot" style="margin-bottom:5px">Massa que ainda falta comer</div><div class="tempo" id="j-barra"><i id="j-tempo"></i></div></div>
   <div class="zona" id="zona">
-    <div class="combo" id="combo"></div>
     <div id="urso">
       <img class="fechada" src="urso.png" alt="">
       <img class="aberta" src="urso-boca.png" alt="">
@@ -507,7 +537,7 @@ function verificarLimite(){
    Zerou o cookie → próximo, regenerando mais rápido.
    A massa voltou ao inteiro → acabou.                                   */
 var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
-var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0;
+var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0, mult=1;
 
 function cfgRodada(n){
   var base=C.MORDIDAS_BASE||24, passo=C.MORDIDAS_PASSO||4;
@@ -517,12 +547,11 @@ function cfgRodada(n){
 
 function iniciar(){
   var T=TIMES[timeAtual];
-  rodada=0; comidos=0; mordidasFeitas=0; tJogo=0;
+  rodada=0; comidos=0; mordidasFeitas=0; tJogo=0; mult=1;
   $("j-nome").textContent=jogadorNome||"Você";
   $("j-pts").textContent="0";
   $("j-tempo").style.background=T.cor;
   $("j-dica").textContent="Toca sem parar. Se você parar, a massa volta.";
-  $("combo").classList.remove("on");
   novaRodada();
   ir("t-jogo");
   contar(3);
@@ -534,8 +563,24 @@ function novaRodada(){
   mordidasRodada=c.mordidas; regen=c.regen;
   massa = C.MASSA_INICIAL || 0.88;
   sortearMordidas(mordidasRodada);
+
+  /* cada cookie novo vale mais que o anterior */
+  mult = Math.min(C.MULT_MAX||5, rodada);
+  var m=$("j-mult");
+  m.textContent="x"+mult;
+  m.classList.remove("subiu"); void m.offsetWidth; m.classList.add("subiu");
   $("j-cookies").textContent = "Cookie "+rodada;
+
   desenhar();
+}
+
+/* banner grande quando vira de fase */
+function bannerFase(){
+  var d=document.createElement("div");
+  d.className="fase";
+  d.innerHTML='<b>x'+mult+'</b><span>cada toque vale '+mult+'</span>';
+  $("zona").appendChild(d);
+  setTimeout(function(){ d.remove(); },1300);
 }
 
 function contar(n){
@@ -587,8 +632,9 @@ $("alvo").addEventListener("pointerdown",function(e){
   e.preventDefault();
 
   massa -= 1/mordidasRodada;
-  mordidasFeitas++;
+  mordidasFeitas += mult;
   $("j-pts").textContent=mordidasFeitas;
+  mostrarGanho(mult);
 
   /* arranca um pedaço e manda pra dentro da boca */
   var a=$("alvo"), u=$("urso");
@@ -597,11 +643,9 @@ $("alvo").addEventListener("pointerdown",function(e){
 
   if(massa<=0){
     comidos++;
-    $("combo").textContent="COOKIE INTEIRO!";
-    $("combo").classList.add("on");
-    setTimeout(function(){ $("combo").classList.remove("on"); },1100);
     $("j-dica").textContent = rodada>=4 ? "Esse vem mais teimoso." : "Mais um. Esse volta mais rápido.";
     novaRodada();
+    bannerFase();
   }
   desenhar();
 },{passive:false});
@@ -682,6 +726,20 @@ function desenhar(){
   ctx.restore();
 }
 
+/* ---------- o ganho que sobe a cada toque ---------- */
+function mostrarGanho(v){
+  var z=$("zona"), r=z.getBoundingClientRect();
+  var ra=$("alvo").getBoundingClientRect();
+  var g=document.createElement("div");
+  g.className="ganho";
+  g.textContent="+"+v;
+  g.style.color = v>=4 ? "var(--vermelho)" : v>=2 ? "var(--dourado)" : "var(--creme)";
+  g.style.left=(ra.left-r.left+ra.width/2 - 14 + (Math.random()-0.5)*44).toFixed(0)+"px";
+  g.style.top =(ra.top -r.top + ra.height*0.30).toFixed(0)+"px";
+  z.appendChild(g);
+  setTimeout(function(){ g.remove(); },640);
+}
+
 /* ---------- o pedaço arrancado vai pra boca ---------- */
 var BOCA_X=0.50, BOCA_Y=0.305;   /* onde fica a boca dentro da arte do urso */
 
@@ -747,9 +805,9 @@ function terminar(){
   $("f-time").style.color=T.cor;
   $("f-pts").textContent=total;
   $("f-pts").style.color=T.cor;
-  $("f-det").textContent = mordidasFeitas+" mordidas em "+comidos+
-    (comidos===1?" cookie inteiro":" cookies inteiros")+" viraram "+pts+
-    " pontos, mais "+bonus+" pelo cookie que você comprou.";
+  $("f-det").textContent = mordidasFeitas+" pontos no jogo, em "+comidos+
+    (comidos===1?" cookie inteiro":" cookies inteiros")+", viraram "+pts+
+    " para o time, mais "+bonus+" pelo cookie que você comprou.";
   $("f-msg").textContent = pts>=teto ? "Pontuação máxima!" :
                            comidos>=5 ? "Urso faminto!" :
                            comidos>=3 ? "Comeu bem!" :
