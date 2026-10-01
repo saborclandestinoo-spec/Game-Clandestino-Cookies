@@ -11,13 +11,14 @@ window.CONFIG = {
   LIMITE_POR_APARELHO_DIA: 4,  // quantas partidas o mesmo celular pode jogar por dia
   DATA_APURACAO: "2026-10-12", // dia em que a guerra termina
   INSTAGRAM: "@clandestinocookies",
-
+ 
   // ---------- Pontos ----------
   BONUS_POR_COOKIE: 150,        // pontos que cada cookie VENDIDO garante ao time
-  PONTOS_POR_MORDIDA: 0.5,      // cada mordida vale meio ponto
+  PONTOS_POR_MORDIDA: 0.25,     // converte os pontos do jogo em pontos do time
+  MULT_MAX: 5,                  // multiplicador maximo (cookie 5 em diante)
   BONUS_POR_COOKIE_COMIDO: 10,  // pontos extras por cookie zerado dentro do jogo
   TETO_PONTOS: 300,             // teto da partida, para um craque não desequilibrar
-
+ 
   // ---------- Dificuldade ----------
   // Cada toque arranca uma mordida. A massa se regenera sozinha e o urso
   // vai ficando mais faminto conforme a partida avança.
