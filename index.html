@@ -132,14 +132,31 @@ input:focus{outline:none;border-color:var(--vermelho)}
 .tempo.perigo{border-color:var(--vermelho)}
 .tempo.perigo>i{animation:pisca .45s infinite}
 @keyframes pisca{50%{opacity:.35}}
-.zona{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-  position:relative;min-height:260px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-#urso{width:min(34vw,150px);transition:transform .08s;transform-origin:50% 100%}
-#urso.mastiga{transform:scale(1.07,.93)}
+.zona{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  position:relative;min-height:240px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#urso{width:min(40vw,176px);transform-origin:50% 100%;position:relative;z-index:2;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+#urso.mastiga{animation:mastigar .22s ease-out}
+@keyframes mastigar{
+  0%{transform:scale(1,1)}
+  35%{transform:scale(1.09,.9) translateY(4px)}
+  70%{transform:scale(.97,1.05) translateY(-2px)}
+  100%{transform:scale(1,1)}
+}
 #alvo{width:min(62vw,280px);aspect-ratio:1;border:none;padding:0;background:none;cursor:pointer;
-  transition:transform .05s;position:relative;margin-top:-6px}
+  position:relative;margin-top:-62px;z-index:1}
 #alvo canvas{width:100%;height:100%;display:block}
-#alvo.hit{transform:scale(.95)}
+#alvo.abocanhado{animation:aboca .19s ease-out}
+@keyframes aboca{
+  0%{transform:translateY(0) rotate(0)}
+  40%{transform:translateY(-26px) rotate(-5deg) scale(.96)}
+  100%{transform:translateY(0) rotate(0)}
+}
+.migalha{position:absolute;border-radius:50%;background:#a5702f;pointer-events:none;
+  animation:voa .6s ease-out forwards}
+@keyframes voa{
+  to{transform:translate(var(--dx),calc(var(--dy) + 52px));opacity:0}
+}
 .faisca{position:absolute;font-family:var(--ui);font-weight:700;font-size:1.3rem;pointer-events:none;
   animation:sobe .7s ease-out forwards}
 @keyframes sobe{to{transform:translateY(-80px);opacity:0}}
@@ -275,7 +292,7 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <div><div class="rot" id="j-cookies">Cookie 1</div><div class="big" id="j-nome">—</div></div>
     <div style="text-align:right"><div class="rot">Mordidas</div><div class="big" id="j-pts">0</div></div>
   </div>
-  <div class="tempo" id="j-barra"><i id="j-tempo"></i></div>
+  <div><div class="rot" style="margin-bottom:5px">Massa que ainda falta comer</div><div class="tempo" id="j-barra"><i id="j-tempo"></i></div></div>
   <div class="zona" id="zona">
     <div class="combo" id="combo"></div>
     <img id="urso" src="urso.png" alt="">
@@ -552,9 +569,13 @@ $("alvo").addEventListener("pointerdown",function(e){
   mordidasFeitas++;
   $("j-pts").textContent=mordidasFeitas;
 
-  var a=$("alvo"); a.classList.add("hit"); setTimeout(function(){ a.classList.remove("hit"); },50);
-  var u=$("urso"); u.classList.add("mastiga"); setTimeout(function(){ u.classList.remove("mastiga"); },80);
-  faisca(e,"+1");
+  /* o cookie sobe até a boca, o urso mastiga, migalhas voam */
+  var a=$("alvo"), u=$("urso");
+  a.classList.remove("abocanhado"); void a.offsetWidth; a.classList.add("abocanhado");
+  u.classList.remove("mastiga");    void u.offsetWidth; u.classList.add("mastiga");
+
+  var z=$("zona").getBoundingClientRect(), ra=a.getBoundingClientRect();
+  migalhas(ra.left-z.left+ra.width/2, ra.top-z.top+ra.height*0.18);
 
   if(massa<=0){
     comidos++;
@@ -567,17 +588,6 @@ $("alvo").addEventListener("pointerdown",function(e){
   desenhar();
 },{passive:false});
 
-function faisca(e,txt){
-  var z=$("zona"), r=z.getBoundingClientRect();
-  var s=document.createElement("div");
-  s.className="faisca"; s.textContent=txt;
-  s.style.color="var(--creme)";
-  s.style.left=(e.clientX-r.left-10)+"px";
-  s.style.top=(e.clientY-r.top-16)+"px";
-  z.appendChild(s);
-  setTimeout(function(){ s.remove(); },700);
-}
-
 /* ---------- desenho do cookie ---------- */
 var cv=$("cv"), ctx=cv.getContext("2d"), mordidas=[], gotas=[];
 (function(){
@@ -586,44 +596,88 @@ var cv=$("cv"), ctx=cv.getContext("2d"), mordidas=[], gotas=[];
     gotas.push({ x:0.5+Math.cos(ang)*rr*0.78, y:0.5+Math.sin(ang)*rr*0.78, r:0.035+0.022*((i*0.61)%1) });
   }
 })();
+/* O cookie é comido por um lado só, como gente come: uma frente de mordida
+   avança pela massa, deixando a beirada dentada. */
 function sortearMordidas(n){
   mordidas=[];
-  for(var i=0;i<n;i++){
-    var ang=i*2.399 + rodada*0.9;
-    var prof=i/n;
-    var dist=0.50 - 0.30*prof;
-    mordidas.push({ ang:ang, dist:dist, r:0.115 + 0.03*((i*0.53)%1) });
+  for(var i=0;i<14;i++){
+    mordidas.push({ t:(i/13-0.5)*2.1, r:0.10+0.05*((i*1.7)%1) });
   }
+  /* a mordida vem de cima, do lado do urso; varia um pouco a cada cookie */
+  mordidas.dir = -Math.PI/2 + ((rodada%3)-1)*0.55;
 }
+
 function desenhar(){
   var S=cv.width, cx=S/2, cy=S/2, R=S*0.46;
   ctx.clearRect(0,0,S,S);
-
-  var comidas=Math.min(mordidas.length, Math.max(0, Math.round((1-massa)*mordidasRodada)));
 
   ctx.save();
   ctx.beginPath(); ctx.arc(cx,cy,R,0,6.2832); ctx.closePath();
   ctx.clip();
 
   var g=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.1,cx,cy,R);
-  g.addColorStop(0,"#d9a874"); g.addColorStop(0.62,"#b2793f"); g.addColorStop(1,"#7d4a1f");
+  g.addColorStop(0,"#e3b685"); g.addColorStop(0.58,"#b2793f"); g.addColorStop(1,"#7a4619");
   ctx.fillStyle=g;
   ctx.fillRect(0,0,S,S);
 
   ctx.fillStyle="#4a2a12";
   gotas.forEach(function(d){
     ctx.beginPath(); ctx.arc(d.x*S,d.y*S,d.r*S,0,6.2832); ctx.fill();
+    ctx.save(); ctx.globalAlpha=0.35; ctx.fillStyle="#6b4120";
+    ctx.beginPath(); ctx.arc(d.x*S-d.r*S*0.22,d.y*S-d.r*S*0.25,d.r*S*0.55,0,6.2832); ctx.fill();
+    ctx.restore(); ctx.fillStyle="#4a2a12";
   });
   ctx.restore();
 
+  /* a frente de mordida: avança pela massa, deixando a beirada dentada */
   ctx.save();
   ctx.globalCompositeOperation="destination-out";
-  for(var i=0;i<comidas;i++){
-    var m=mordidas[i];
-    var mx=cx+Math.cos(m.ang)*m.dist*S, my=cy+Math.sin(m.ang)*m.dist*S;
-    ctx.beginPath(); ctx.arc(mx,my,m.r*S,0,6.2832); ctx.fill();
+  var prog=1-massa;
+  if(prog>0.001){
+    var D=1.7*S, dir=mordidas.dir;
+    var ox=cx+Math.cos(dir)*D, oy=cy+Math.sin(dir)*D;
+
+    /* posiciona a frente para que a ÁREA comida seja igual ao progresso */
+    var lo=-R, hi=R, h=0;
+    for(var k=0;k<22;k++){
+      h=(lo+hi)/2;
+      var frac=(R*R*Math.acos(h/R) - h*Math.sqrt(Math.max(0,R*R-h*h)))/(Math.PI*R*R);
+      if(frac>prog) lo=h; else hi=h;
+    }
+    var raio=D-h;
+
+    ctx.beginPath(); ctx.arc(ox,oy,raio,0,6.2832); ctx.fill();
+    for(var i=0;i<mordidas.length;i++){
+      var d=mordidas[i], a=dir+Math.PI+d.t*(R/raio)*1.9;
+      ctx.beginPath();
+      ctx.arc(ox+Math.cos(a)*raio, oy+Math.sin(a)*raio, d.r*S, 0, 6.2832);
+      ctx.fill();
+    }
   }
   ctx.restore();
+
+  /* borda tostada só onde o cookie ainda é inteiro */
+  ctx.save();
+  ctx.globalCompositeOperation="source-atop";
+  ctx.strokeStyle="rgba(92,52,20,.75)"; ctx.lineWidth=S*0.018;
+  ctx.beginPath(); ctx.arc(cx,cy,R-S*0.009,0,6.2832); ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------- migalhas ---------- */
+function migalhas(x,y){
+  var z=$("zona");
+  for(var i=0;i<5;i++){
+    var p=document.createElement("i");
+    p.className="migalha";
+    var ang=-1.57 + (Math.random()-0.5)*2.2, v=26+Math.random()*34;
+    p.style.left=x+"px"; p.style.top=y+"px";
+    p.style.width=p.style.height=(3+Math.random()*4).toFixed(1)+"px";
+    p.style.setProperty("--dx",(Math.cos(ang)*v).toFixed(0)+"px");
+    p.style.setProperty("--dy",(Math.sin(ang)*v-18).toFixed(0)+"px");
+    z.appendChild(p);
+    (function(el){ setTimeout(function(){ el.remove(); },620); })(p);
+  }
 }
 
 function terminar(){
