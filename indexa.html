@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guerra dos Cookies — Clandestino Cookies</title>
+<meta name="theme-color" content="#0B0B0B">
+<meta property="og:title" content="Guerra dos Cookies — Clandestino Cookies">
+<meta property="og:description" content="Confete contra Granulado. Comprou cookie, entrou na guerra.">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@300;500;700&display=swap">
+<style>
+/* Layout: uma tela por vez, preto absoluto, carimbo vermelho + fita dourada. */
+:root{
+  --preto:#0B0B0B;
+  --preto-2:#141414;
+  --preto-3:#1D1B19;
+  --vermelho:#FF1F1F;
+  --vermelho-fundo:#7A0A0A;
+  --dourado:#D4A76A;
+  --dourado-fundo:#6B5230;
+  --creme:#F5F1EA;
+  --fosco:#8C837A;
+  --traco:#2A2724;
+
+  --display:"Special Elite","Courier New",monospace;
+  --ui:"Oswald","Arial Narrow",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--preto);color:var(--creme);
+  font-family:var(--ui);font-weight:300;
+  -webkit-tap-highlight-color:transparent;overflow-x:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+img{max-width:100%;display:block}
+[hidden]{display:none!important}
+
+.tela{
+  min-height:100%;display:none;flex-direction:column;gap:20px;
+  padding-block:22px 30px;padding-left:20px;padding-right:20px;
+  max-width:760px;margin:0 auto;
+}
+.tela.on{display:flex}
+
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;text-wrap:balance}
+h2{font-size:clamp(1.6rem,7vw,2.4rem)}
+p{margin:0;line-height:1.55}
+.rot{font-family:var(--ui);font-weight:700;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--fosco)}
+.num{font-family:var(--ui);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* marca */
+.topo{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.topo img{width:clamp(150px,44vw,220px)}
+.selo{font-family:var(--display);font-size:.7rem;color:var(--vermelho);border:2px solid var(--vermelho);
+  padding:5px 9px;transform:rotate(-4deg);white-space:nowrap;letter-spacing:.04em}
+
+/* fita dourada — igual ao lettering COOKIES da marca */
+.fita{display:inline-block;background:var(--dourado);color:#000;font-weight:700;
+  letter-spacing:.34em;text-transform:uppercase;font-size:.78rem;padding:5px 14px 4px}
+
+/* botões */
+.btn{
+  font-family:var(--ui);font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  font-size:1rem;border:none;padding:18px 22px;cursor:pointer;width:100%;
+  background:var(--vermelho);color:#fff;transition:transform .08s,filter .15s;
+}
+.btn:active{transform:translateY(2px)}
+.btn:hover{filter:brightness(1.12)}
+.btn.ouro{background:var(--dourado);color:#000}
+.btn.vazio{background:transparent;color:var(--fosco);border:2px solid var(--traco);font-size:.8rem;padding:13px 18px}
+.btn.vazio:hover{color:var(--creme);border-color:var(--fosco);filter:none}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible{outline:3px solid var(--dourado);outline-offset:3px}
+.linha{display:flex;gap:10px;flex-wrap:wrap}
+.linha>*{flex:1;min-width:140px}
+.rodape{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap}
+.rodape>*{flex:1;min-width:130px}
+
+/* placar */
+.arena{border:2px solid var(--traco);background:var(--preto-2);padding:20px}
+.times{display:flex;justify-content:space-between;gap:14px;margin-bottom:16px}
+.lado{flex:1;min-width:0}
+.lado.b{text-align:right}
+.lado .nm{font-family:var(--display);font-size:clamp(1.1rem,5vw,1.6rem)}
+.lado .pt{font-family:var(--ui);font-weight:700;font-size:clamp(2.1rem,11vw,3.6rem);line-height:1;font-variant-numeric:tabular-nums}
+.lado .dt{font-size:.78rem;color:var(--fosco);font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.cf{color:var(--vermelho)}
+.gr{color:var(--dourado)}
+
+.corda{position:relative;height:26px;background:#000;border:2px solid var(--traco);overflow:hidden}
+.corda .f{position:absolute;top:0;bottom:0;transition:width .7s cubic-bezier(.22,1,.36,1)}
+.corda .fa{left:0;background:linear-gradient(90deg,var(--vermelho-fundo),var(--vermelho))}
+.corda .fb{right:0;background:linear-gradient(270deg,var(--dourado-fundo),var(--dourado))}
+.pct{display:flex;justify-content:space-between;margin-top:9px;font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
+
+/* listas */
+.bloco{display:flex;flex-direction:column;gap:12px}
+ol.lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+ol.lista li{display:flex;align-items:center;gap:12px;border:2px solid var(--traco);background:var(--preto-2);padding:12px 14px}
+ol.lista li:first-child{border-color:var(--dourado)}
+.pos{font-family:var(--display);color:var(--dourado);width:2.2ch;text-align:center;flex:none;font-size:1.1rem}
+.quem{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quem small{display:block;color:var(--fosco);font-size:.7rem;letter-spacing:.1em}
+.val{font-weight:700;flex:none;font-variant-numeric:tabular-nums}
+.val small{color:var(--fosco);font-weight:300;font-size:.7rem;letter-spacing:.08em}
+.vazio{color:var(--fosco);border:2px dashed var(--traco);padding:22px;text-align:center;font-size:.9rem}
+
+/* entrada de time */
+.porta{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;margin-block:auto}
+.porta img.urso{width:min(56vw,240px);filter:drop-shadow(0 0 30px rgba(255,31,31,.25))}
+.porta .tag{font-family:var(--display);font-size:clamp(2rem,10vw,3.4rem);line-height:1}
+.porta.g img.urso{filter:drop-shadow(0 0 30px rgba(212,167,106,.28))}
+
+label{display:block;font-family:var(--ui);font-weight:700;font-size:.72rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--fosco);margin-bottom:8px}
+input{width:100%;padding:16px;border:2px solid var(--traco);background:#000;color:var(--creme);
+  font-family:var(--ui);font-size:1.1rem;font-weight:500}
+input:focus{outline:none;border-color:var(--vermelho)}
+.erro{color:var(--vermelho);font-size:.85rem;font-weight:500}
+
+/* jogo */
+#t-jogo{justify-content:space-between}
+.hud{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.hud .big{font-family:var(--ui);font-weight:700;font-size:clamp(1.7rem,9vw,2.6rem);line-height:1;font-variant-numeric:tabular-nums}
+.tempo{height:10px;background:#000;border:2px solid var(--traco);overflow:hidden}
+.tempo>i{display:block;height:100%;width:100%;background:var(--vermelho)}
+.zona{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:250px;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#alvo{width:min(70vw,320px);aspect-ratio:1;border:none;padding:0;background:none;cursor:pointer;
+  transition:transform .05s;position:relative}
+#alvo img{width:100%}
+#alvo.hit{transform:scale(.92)}
+.faisca{position:absolute;font-family:var(--ui);font-weight:700;font-size:1.3rem;pointer-events:none;
+  animation:sobe .7s ease-out forwards}
+@keyframes sobe{to{transform:translateY(-80px);opacity:0}}
+.combo{position:absolute;top:0;left:50%;transform:translateX(-50%);font-family:var(--display);
+  font-size:1.2rem;color:var(--dourado);opacity:0;transition:opacity .2s}
+.combo.on{opacity:1}
+.contagem{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:rgba(11,11,11,.96);font-family:var(--display);font-size:clamp(5rem,32vw,13rem);color:var(--vermelho)}
+
+/* painel */
+.cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.cartao{border:2px solid var(--traco);background:var(--preto-2);padding:16px}
+.cartao .n{font-family:var(--ui);font-weight:700;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.qrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.qr{border:2px solid var(--traco);background:var(--preto-2);padding:16px;text-align:center;overflow-wrap:anywhere}
+.qr .caixa{background:#fff;padding:12px;display:inline-block;margin-block:10px}
+.qr code{font-size:.7rem;color:var(--fosco);font-family:ui-monospace,monospace}
+textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2px solid var(--traco);
+  padding:12px;font-family:ui-monospace,monospace;font-size:.72rem;resize:vertical}
+.aviso{border-left:4px solid var(--vermelho);padding:12px 14px;background:var(--preto-2);font-size:.88rem;line-height:1.5}
+.nota{font-size:.82rem;color:var(--fosco);line-height:1.55}
+.rolagem{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- CARREGANDO -->
+<section class="tela on" id="t-load">
+  <div class="porta">
+    <img class="urso" src="urso.png" alt="Mascote Clandestino Cookies">
+    <p class="rot">Abrindo o cofre…</p>
+  </div>
+</section>
+
+<!-- CONFIG FALTANDO -->
+<section class="tela" id="t-config">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <h2>Falta ligar o Supabase</h2>
+  <div class="aviso">Abra o arquivo <strong>config.js</strong> e preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code>. Depois recarregue esta página.</div>
+  <p class="nota">As duas chaves ficam em Supabase &rsaquo; Project Settings &rsaquo; API. Use a chave <strong>anon public</strong>, nunca a service_role.</p>
+</section>
+
+<!-- PLACAR -->
+<section class="tela" id="t-placar">
+  <div class="topo">
+    <img src="logo.png" alt="Clandestino Cookies">
+    <div class="selo" id="selo-dias">12 DE OUTUBRO</div>
+  </div>
+  <div><span class="fita">Guerra dos Cookies</span></div>
+
+  <div class="arena">
+    <div class="times">
+      <div class="lado">
+        <div class="nm cf">Confete</div>
+        <div class="pt cf" id="p-cf">0</div>
+        <div class="dt" id="d-cf">0 cookies</div>
+      </div>
+      <div class="lado b">
+        <div class="nm gr">Granulado</div>
+        <div class="pt gr" id="p-gr">0</div>
+        <div class="dt" id="d-gr">0 cookies</div>
+      </div>
+    </div>
+    <div class="corda">
+      <div class="f fa" id="f-cf" style="width:50%"></div>
+      <div class="f fb" id="f-gr" style="width:50%"></div>
+    </div>
+    <div class="pct"><span class="cf" id="pc-cf">50%</span><span class="gr" id="pc-gr">50%</span></div>
+  </div>
+
+  <div class="bloco">
+    <div class="rot">Top compradores</div>
+    <ol class="lista" id="l-compradores"></ol>
+  </div>
+
+  <div class="bloco">
+    <div class="rot">Melhores batalhas</div>
+    <ol class="lista" id="l-batedores"></ol>
+  </div>
+
+  <p class="nota">Comprou um cookie, ganhou o link do seu time. Cada cookie vale 100 pontos + o que você bater na batalha.</p>
+
+  <div class="rodape"><button class="btn vazio" id="b-painel-ir">Painel da loja</button></div>
+</section>
+
+<!-- PORTA DO TIME -->
+<section class="tela" id="t-porta">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <div class="porta" id="porta-box">
+    <img class="urso" src="urso.png" alt="">
+    <div class="rot">Você entrou no</div>
+    <div class="tag" id="porta-tag">TIME CONFETE</div>
+    <p class="nota" id="porta-txt" style="max-width:34ch"></p>
+  </div>
+  <button class="btn" id="b-porta">Entrar na batalha</button>
+  <div class="rodape"><button class="btn vazio" data-ir="t-placar">Ver o placar</button></div>
+</section>
+
+<!-- CADASTRO -->
+<section class="tela" id="t-entrar">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <h2 id="ent-tit">Quem tá batendo?</h2>
+  <div>
+    <label for="i-nome">Seu nome</label>
+    <input id="i-nome" maxlength="30" autocomplete="name" placeholder="Ex.: Lulu">
+  </div>
+  <div>
+    <label for="i-zap">WhatsApp com DDD</label>
+    <input id="i-zap" type="tel" inputmode="numeric" maxlength="16" autocomplete="tel" placeholder="17 99999 9999">
+  </div>
+  <p class="nota">O WhatsApp junta todas as suas compras no ranking de top compradores. Usamos só para o sorteio da campanha.</p>
+  <p class="erro" id="ent-erro" hidden></p>
+  <button class="btn" id="b-entrar">Bora batalhar</button>
+  <div class="rodape"><button class="btn vazio" data-ir="t-placar">Ver o placar</button></div>
+</section>
+
+<!-- BLOQUEADO -->
+<section class="tela" id="t-bloqueio">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <div class="porta">
+    <img class="urso" src="cadeado.jpg" alt="" style="width:min(42vw,180px)">
+    <h2>Por hoje chega</h2>
+    <p class="nota" id="bloq-txt" style="max-width:34ch"></p>
+  </div>
+  <button class="btn ouro" data-ir="t-placar">Ver o placar</button>
+</section>
+
+<!-- JOGO -->
+<section class="tela" id="t-jogo">
+  <div class="hud">
+    <div><div class="rot" id="j-time">Time</div><div class="big" id="j-nome">—</div></div>
+    <div style="text-align:right"><div class="rot">Pontos</div><div class="big" id="j-pts">0</div></div>
+  </div>
+  <div class="tempo"><i id="j-tempo"></i></div>
+  <div class="zona" id="zona">
+    <div class="combo" id="combo"></div>
+    <button id="alvo" aria-label="Bater no cookie"><img src="urso.png" alt=""></button>
+  </div>
+  <p class="nota" style="text-align:center">Bate rápido. Sequência colada dá bônus.</p>
+</section>
+
+<!-- RESULTADO -->
+<section class="tela" id="t-fim">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <div class="porta">
+    <div class="rot" id="f-time">Time</div>
+    <div class="pt num" id="f-pts" style="font-size:clamp(3.4rem,20vw,6.5rem);line-height:1">0</div>
+    <h2 id="f-msg">Boa!</h2>
+    <p class="nota" id="f-det" style="max-width:36ch"></p>
+    <p class="erro" id="f-erro" hidden></p>
+  </div>
+  <button class="btn ouro" id="b-zap">Chamar reforço no WhatsApp</button>
+  <div class="rodape"><button class="btn vazio" data-ir="t-placar">Ver o placar</button></div>
+</section>
+
+<!-- PAINEL -->
+<section class="tela" id="t-painel">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"><div class="selo">PAINEL</div></div>
+
+  <div id="pn-lock">
+    <label for="i-pin">Senha da loja</label>
+    <input id="i-pin" type="password" inputmode="numeric" maxlength="12" placeholder="••••">
+    <p class="erro" id="pin-erro" hidden>Senha errada.</p>
+    <div style="height:14px"></div>
+    <button class="btn" id="b-pin">Entrar</button>
+  </div>
+
+  <div id="pn-area" hidden style="display:flex;flex-direction:column;gap:22px">
+    <div class="cartoes" id="pn-cards"></div>
+
+    <div class="bloco">
+      <div class="rot">Links para entregar na compra</div>
+      <div class="qrs" id="pn-qrs"></div>
+      <p class="nota">Imprima cada QR num cartãozinho e entregue junto com o cookie do sabor correspondente. Quem levar Confete recebe o QR vermelho, quem levar Granulado recebe o dourado.</p>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Top compradores</div>
+      <ol class="lista" id="pn-comp"></ol>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Exportar (CSV)</div>
+      <textarea id="pn-csv" readonly></textarea>
+      <div class="linha">
+        <button class="btn vazio" id="b-csv">Copiar CSV</button>
+        <button class="btn vazio" id="b-atualizar">Atualizar dados</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rodape"><button class="btn vazio" data-ir="t-placar">Voltar ao placar</button></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+"use strict";
+var C = window.CONFIG || {};
+var TIMES = {
+  confete:   { nome:"CONFETE",   cor:"var(--vermelho)", classe:"cf", frase:"Vermelho é sangue de confeiteiro. Bate no cookie e empurra a corda." },
+  granulado: { nome:"GRANULADO", cor:"var(--dourado)",  classe:"gr", frase:"Dourado não pede licença. Bate no cookie e empurra a corda." }
+};
+var sb=null, timeAtual=null, jogadorId=null, jogadorNome=null, deviceId=null;
+
+function $(id){ return document.getElementById(id); }
+function ls(k,v){
+  try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; }
+}
+function ir(id){
+  Array.prototype.forEach.call(document.querySelectorAll(".tela"),function(s){ s.classList.toggle("on", s.id===id); });
+  window.scrollTo(0,0);
+  if(id==="t-placar") carregarPlacar();
+}
+Array.prototype.forEach.call(document.querySelectorAll("[data-ir]"),function(b){
+  b.addEventListener("click",function(){ pararJogo(); ir(b.getAttribute("data-ir")); });
+});
+
+/* ---------- boot ---------- */
+function boot(){
+  deviceId = ls("cc_device");
+  if(!deviceId){
+    deviceId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+             : "d"+Date.now()+Math.random().toString(36).slice(2);
+    ls("cc_device", deviceId);
+  }
+  jogadorId = ls("cc_jogador"); jogadorNome = ls("cc_nome");
+
+  if(!C.SUPABASE_URL || !C.SUPABASE_ANON_KEY){ ir("t-config"); return; }
+  sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+
+  var p = new URLSearchParams(location.search);
+  var t = (p.get("t")||"").toLowerCase();
+  if(location.hash === "#painel"){ ir("t-painel"); return; }
+
+  if(TIMES[t]){ timeAtual=t; abrirPorta(t); }
+  else { ir("t-placar"); assinarPlacar(); }
+}
+
+/* ---------- porta do time ---------- */
+function abrirPorta(t){
+  var T=TIMES[t];
+  $("porta-tag").textContent="TIME "+T.nome;
+  $("porta-tag").style.color=T.cor;
+  $("porta-txt").textContent=T.frase;
+  $("porta-box").classList.toggle("g", t==="granulado");
+  $("b-porta").className = "btn" + (t==="granulado" ? " ouro" : "");
+  ir("t-porta");
+}
+$("b-porta").addEventListener("click",function(){
+  if(jogadorId){ verificarLimite(); }
+  else { $("ent-erro").hidden=true; ir("t-entrar"); setTimeout(function(){ try{$("i-nome").focus();}catch(e){} },150); }
+});
+
+/* ---------- cadastro ---------- */
+$("i-zap").addEventListener("input",function(){
+  var d=this.value.replace(/\D/g,"").slice(0,11);
+  this.value = d.length>7 ? d.replace(/(\d{2})(\d{4,5})(\d{0,4})/,"$1 $2 $3").trim()
+             : d.length>2 ? d.replace(/(\d{2})(\d+)/,"$1 $2") : d;
+});
+$("i-nome").addEventListener("keydown",function(e){ if(e.key==="Enter") $("i-zap").focus(); });
+$("i-zap").addEventListener("keydown",function(e){ if(e.key==="Enter") cadastrar(); });
+$("b-entrar").addEventListener("click",cadastrar);
+
+function cadastrar(){
+  var nome=$("i-nome").value.trim();
+  var zap=$("i-zap").value.replace(/\D/g,"");
+  var e=$("ent-erro");
+  if(nome.length<2){ e.textContent="Escreve seu nome."; e.hidden=false; return; }
+  if(zap.length<10){ e.textContent="WhatsApp com DDD, 10 ou 11 números."; e.hidden=false; return; }
+  e.hidden=true;
+  var b=$("b-entrar"); b.disabled=true; b.textContent="Entrando…";
+
+  sb.rpc("entrar",{p_nome:nome,p_whatsapp:zap}).then(function(r){
+    b.disabled=false; b.textContent="Bora batalhar";
+    if(r.error){ e.textContent="Não deu pra entrar agora. Tenta de novo."; e.hidden=false; return; }
+    jogadorId=r.data; jogadorNome=nome;
+    ls("cc_jogador",jogadorId); ls("cc_nome",nome);
+    verificarLimite();
+  });
+}
+
+/* ---------- limite por aparelho ---------- */
+function verificarLimite(){
+  sb.rpc("jogadas_hoje",{p_device:deviceId}).then(function(r){
+    var n = r.error ? 0 : (r.data||0);
+    if(n >= (C.LIMITE_POR_APARELHO_DIA||4)){
+      $("bloq-txt").textContent="Este celular já jogou "+n+" batalhas hoje. Volta amanhã com outro cookie — ou passa o link pra alguém do seu time.";
+      ir("t-bloqueio"); return;
+    }
+    iniciar();
+  });
+}
+
+/* ---------- jogo ---------- */
+var rodando=false, fimEm=0, raf=0, pts=0, ultimo=0, combo=0, tCont=0;
+function iniciar(){
+  var T=TIMES[timeAtual];
+  pts=0; combo=0; ultimo=0;
+  $("j-nome").textContent=jogadorNome||"Você";
+  $("j-time").textContent="Time "+T.nome;
+  $("j-time").style.color=T.cor;
+  $("j-pts").textContent="0";
+  $("j-tempo").style.width="100%";
+  $("j-tempo").style.background=T.cor;
+  $("combo").classList.remove("on");
+  ir("t-jogo");
+  contar(3);
+}
+function contar(n){
+  var d=document.createElement("div");
+  d.className="contagem"; d.id="cont"; d.textContent=n;
+  d.style.color=TIMES[timeAtual].cor;
+  document.body.appendChild(d);
+  var v=n;
+  tCont=setInterval(function(){
+    v--;
+    if(v>0) d.textContent=v;
+    else if(v===0) d.textContent="JÁ!";
+    else { clearInterval(tCont); d.remove(); rodando=true; fimEm=performance.now()+(C.SEGUNDOS_BATALHA||12)*1000; loop(); }
+  },700);
+}
+function loop(){
+  if(!rodando) return;
+  var total=(C.SEGUNDOS_BATALHA||12)*1000;
+  var resta=fimEm-performance.now();
+  if(resta<=0){ terminar(); return; }
+  $("j-tempo").style.width=(resta/total*100)+"%";
+  if(performance.now()-ultimo>900 && combo>0){ combo=0; $("combo").classList.remove("on"); }
+  raf=requestAnimationFrame(loop);
+}
+function pararJogo(){
+  rodando=false; cancelAnimationFrame(raf); clearInterval(tCont);
+  var c=$("cont"); if(c) c.remove();
+}
+$("alvo").addEventListener("pointerdown",function(e){
+  if(!rodando) return;
+  e.preventDefault();
+  var agora=performance.now();
+  combo = (agora-ultimo<320) ? combo+1 : 0;
+  ultimo=agora;
+  var ganho = combo>=20 ? 3 : combo>=8 ? 2 : 1;
+  pts+=ganho;
+  $("j-pts").textContent=pts;
+  if(combo>=8){ $("combo").textContent="COMBO x"+ganho; $("combo").classList.add("on"); }
+  var a=$("alvo"); a.classList.add("hit"); setTimeout(function(){ a.classList.remove("hit"); },55);
+  faisca(e,ganho);
+},{passive:false});
+
+function faisca(e,ganho){
+  var z=$("zona"), r=z.getBoundingClientRect();
+  var s=document.createElement("div");
+  s.className="faisca"; s.textContent="+"+ganho;
+  s.style.color = ganho>1 ? "var(--dourado)" : "var(--creme)";
+  s.style.left=(e.clientX-r.left-10)+"px";
+  s.style.top=(e.clientY-r.top-16)+"px";
+  z.appendChild(s);
+  setTimeout(function(){ s.remove(); },700);
+}
+
+function terminar(){
+  pararJogo();
+  var T=TIMES[timeAtual], bonus=C.BONUS_POR_COOKIE||100, total=pts+bonus;
+  $("f-time").textContent="Time "+T.nome;
+  $("f-time").style.color=T.cor;
+  $("f-pts").textContent=total;
+  $("f-pts").style.color=T.cor;
+  $("f-det").textContent=pts+" toques + "+bonus+" de bônus pelo cookie. Tudo foi pro time "+T.nome.toLowerCase()+".";
+  $("f-msg").textContent = pts>=110 ? "Mão de metralhadora!" : pts>=80 ? "Bateu forte!" : pts>=45 ? "Boa batida!" : "Valeu pela força!";
+  $("f-erro").hidden=true;
+  ir("t-fim");
+
+  sb.from("jogadas").insert({ jogador_id:jogadorId, time:timeAtual, pontos:pts, device_id:deviceId })
+    .then(function(r){
+      if(r.error){
+        $("f-erro").textContent="Sem internet na hora de salvar. Mostra esta tela no caixa.";
+        $("f-erro").hidden=false;
+      }
+    });
+}
+$("b-zap").addEventListener("click",function(){
+  var T=TIMES[timeAtual]||TIMES.confete;
+  var txt="Entrei no TIME "+T.nome+" na Guerra dos Cookies da Clandestino! Compra um cookie e vem me ajudar: "+location.origin+location.pathname;
+  location.href="https://wa.me/?text="+encodeURIComponent(txt);
+});
+
+/* ---------- placar ---------- */
+function carregarPlacar(){
+  if(!sb) return;
+  sb.from("v_placar").select("*").then(function(r){
+    var cf={pontos:0,cookies:0}, gr={pontos:0,cookies:0};
+    (r.data||[]).forEach(function(l){ if(l.time==="confete") cf=l; else if(l.time==="granulado") gr=l; });
+    $("p-cf").textContent=(cf.pontos||0).toLocaleString("pt-BR");
+    $("p-gr").textContent=(gr.pontos||0).toLocaleString("pt-BR");
+    $("d-cf").textContent=(cf.cookies||0)+((cf.cookies===1)?" cookie":" cookies");
+    $("d-gr").textContent=(gr.cookies||0)+((gr.cookies===1)?" cookie":" cookies");
+    var tot=(cf.pontos||0)+(gr.pontos||0);
+    var real = tot===0 ? 50 : Math.round((cf.pontos||0)/tot*100);
+    var vis = Math.max(5, Math.min(95, real));
+    $("f-cf").style.width=vis+"%"; $("f-gr").style.width=(100-vis)+"%";
+    $("pc-cf").textContent=real+"%"; $("pc-gr").textContent=(100-real)+"%";
+  });
+
+  sb.from("v_top_compradores").select("*").limit(8).then(function(r){
+    pintar($("l-compradores"), r.data||[], function(x){
+      return { nome:x.nome, sub:"•••• "+x.final_whatsapp, time:x.time_favorito,
+               val:x.cookies, unidade:x.cookies===1?"cookie":"cookies" };
+    }, "Ninguém comprou ainda.");
+  });
+
+  sb.from("v_top_batedores").select("*").limit(8).then(function(r){
+    pintar($("l-batedores"), r.data||[], function(x){
+      return { nome:x.nome, sub:x.time==="confete"?"Confete":"Granulado", time:x.time,
+               val:x.pontos, unidade:"pts" };
+    }, "Nenhuma batalha ainda.");
+  });
+
+  var alvo=new Date((C.DATA_APURACAO||"2026-10-12")+"T23:59:59-03:00");
+  var dias=Math.ceil((alvo-new Date())/86400000);
+  $("selo-dias").textContent = dias>1 ? ("FALTAM "+dias+" DIAS") : dias===1 ? "ÚLTIMO DIA" : dias===0 ? "APURAÇÃO HOJE" : "ENCERRADO";
+}
+
+function pintar(ol, dados, mapa, vazio){
+  ol.innerHTML="";
+  if(!dados.length){ ol.innerHTML='<li class="vazio" style="display:block">'+vazio+'</li>'; return; }
+  dados.forEach(function(d,i){
+    var m=mapa(d);
+    var li=document.createElement("li");
+    var pos=document.createElement("span"); pos.className="pos"; pos.textContent=(i+1);
+    var q=document.createElement("span"); q.className="quem"; q.textContent=m.nome;
+    var s=document.createElement("small"); s.textContent=m.sub; q.appendChild(s);
+    var v=document.createElement("span"); v.className="val "+(m.time==="granulado"?"gr":"cf");
+    v.textContent=m.val+" ";
+    var u=document.createElement("small"); u.textContent=m.unidade; v.appendChild(u);
+    li.appendChild(pos); li.appendChild(q); li.appendChild(v);
+    ol.appendChild(li);
+  });
+}
+
+function assinarPlacar(){
+  try{
+    sb.channel("placar-ao-vivo")
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"jogadas"},carregarPlacar)
+      .subscribe();
+  }catch(e){}
+  setInterval(function(){ if($("t-placar").classList.contains("on")) carregarPlacar(); },20000);
+}
+
+/* ---------- painel ---------- */
+var liberado=false;
+$("b-painel-ir").addEventListener("click",function(){ ir("t-painel"); });
+$("b-pin").addEventListener("click",testarPin);
+$("i-pin").addEventListener("keydown",function(e){ if(e.key==="Enter") testarPin(); });
+function testarPin(){
+  if($("i-pin").value.trim()===String(C.SENHA_PAINEL)){
+    liberado=true; $("pn-lock").hidden=true; $("pn-area").hidden=false; montarQR(); carregarPainel();
+  } else { $("pin-erro").hidden=false; }
+}
+$("b-atualizar").addEventListener("click",carregarPainel);
+
+function montarQR(){
+  var base=location.origin+location.pathname;
+  var box=$("pn-qrs"); box.innerHTML="";
+  [["confete","Confete","#FF1F1F"],["granulado","Granulado","#D4A76A"]].forEach(function(t){
+    var url=base+"?t="+t[0];
+    var d=document.createElement("div"); d.className="qr";
+    d.innerHTML='<div class="rot" style="color:'+t[2]+'">Time '+t[1]+'</div><div class="caixa"></div><code>'+url+'</code>';
+    box.appendChild(d);
+    try{ new QRCode(d.querySelector(".caixa"),{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }
+    catch(e){ d.querySelector(".caixa").textContent="QR indisponível"; }
+  });
+}
+
+function carregarPainel(){
+  sb.from("v_placar").select("*").then(function(r){
+    var box=$("pn-cards"); box.innerHTML="";
+    var totalCookies=0, totalPontos=0;
+    (r.data||[]).forEach(function(l){ totalCookies+=l.cookies; totalPontos+=l.pontos; });
+    var cards=[["Cookies vendidos",totalCookies],["Pontos no total",totalPontos]];
+    (r.data||[]).forEach(function(l){
+      cards.push([(l.time==="confete"?"Confete":"Granulado")+" — pontos", l.pontos]);
+    });
+    cards.forEach(function(c){
+      var d=document.createElement("div"); d.className="cartao";
+      d.innerHTML='<div class="rot">'+c[0]+'</div><div class="n">'+c[1]+'</div>';
+      box.appendChild(d);
+    });
+  });
+
+  sb.from("v_top_compradores").select("*").limit(50).then(function(r){
+    var dados=r.data||[];
+    pintar($("pn-comp"), dados.slice(0,15), function(x){
+      return { nome:x.nome, sub:"•••• "+x.final_whatsapp, time:x.time_favorito,
+               val:x.cookies, unidade:x.cookies===1?"cookie":"cookies" };
+    }, "Ninguém comprou ainda.");
+    var l=["posicao;nome;final_whatsapp;cookies;pontos;time_favorito;ultima_compra"];
+    dados.forEach(function(x,i){
+      l.push([i+1,x.nome.replace(/;/g,","),x.final_whatsapp,x.cookies,x.pontos,x.time_favorito,
+              new Date(x.ultima_compra).toLocaleString("pt-BR")].join(";"));
+    });
+    $("pn-csv").value=l.join("\n");
+  });
+}
+$("b-csv").addEventListener("click",function(){
+  var t=$("pn-csv"), b=this;
+  function ok(){ b.textContent="Copiado!"; setTimeout(function(){ b.textContent="Copiar CSV"; },1600); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(ok,function(){ t.select(); });
+  } else { t.select(); }
+});
+
+boot();
+})();
+</script>
+</body>
+</html>
