@@ -134,8 +134,12 @@ input:focus{outline:none;border-color:var(--vermelho)}
 @keyframes pisca{50%{opacity:.35}}
 .zona{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
   position:relative;min-height:240px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-#urso{width:min(40vw,176px);transform-origin:50% 100%;position:relative;z-index:2;
-  filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+#urso{width:min(40vw,176px);aspect-ratio:560/731;transform-origin:50% 100%;
+  position:relative;z-index:2;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+#urso img{position:absolute;inset:0;width:100%;height:100%}
+#urso .aberta{opacity:0}
+#urso.comendo .fechada{opacity:0}
+#urso.comendo .aberta{opacity:1}
 #urso.mastiga{animation:mastigar .22s ease-out}
 @keyframes mastigar{
   0%{transform:scale(1,1)}
@@ -247,7 +251,7 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 <section class="tela" id="t-porta">
   <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
   <div class="porta" id="porta-box">
-    <img class="urso" src="urso.png" alt="">
+    <img class="urso" src="urso-boca.png" alt="">
     <div class="rot">Você entrou no</div>
     <div class="tag" id="porta-tag">TIME CONFETE</div>
     <p class="nota" id="porta-txt" style="max-width:34ch"></p>
@@ -295,7 +299,10 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
   <div><div class="rot" style="margin-bottom:5px">Massa que ainda falta comer</div><div class="tempo" id="j-barra"><i id="j-tempo"></i></div></div>
   <div class="zona" id="zona">
     <div class="combo" id="combo"></div>
-    <img id="urso" src="urso.png" alt="">
+    <div id="urso">
+      <img class="fechada" src="urso.png" alt="">
+      <img class="aberta" src="urso-boca.png" alt="">
+    </div>
     <button id="alvo" aria-label="Dar uma mordida no cookie"><canvas id="cv" width="320" height="320"></canvas></button>
   </div>
   <p class="nota" style="text-align:center" id="j-dica">Toca sem parar. Se você parar, a massa volta.</p>
@@ -487,7 +494,7 @@ function verificarLimite(){
    Zerou o cookie → próximo, regenerando mais rápido.
    A massa voltou ao inteiro → acabou.                                   */
 var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
-var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0;
+var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0;
 
 function cfgRodada(n){
   var base=C.MORDIDAS_BASE||24, passo=C.MORDIDAS_PASSO||4;
@@ -559,6 +566,7 @@ function pararJogo(){
   rodando=false; cancelAnimationFrame(raf); clearInterval(tCont);
   var c=$("cont"); if(c) c.remove();
   $("j-barra").classList.remove("perigo");
+  clearTimeout(fechaBoca); $("urso").classList.remove("comendo");
 }
 
 $("alvo").addEventListener("pointerdown",function(e){
@@ -569,10 +577,13 @@ $("alvo").addEventListener("pointerdown",function(e){
   mordidasFeitas++;
   $("j-pts").textContent=mordidasFeitas;
 
-  /* o cookie sobe até a boca, o urso mastiga, migalhas voam */
+  /* o cookie sobe até a boca, o urso abre a boca e mastiga, migalhas voam */
   var a=$("alvo"), u=$("urso");
   a.classList.remove("abocanhado"); void a.offsetWidth; a.classList.add("abocanhado");
   u.classList.remove("mastiga");    void u.offsetWidth; u.classList.add("mastiga");
+  u.classList.add("comendo");
+  clearTimeout(fechaBoca);
+  fechaBoca=setTimeout(function(){ u.classList.remove("comendo"); },130);
 
   var z=$("zona").getBoundingClientRect(), ra=a.getBoundingClientRect();
   migalhas(ra.left-z.left+ra.width/2, ra.top-z.top+ra.height*0.18);
