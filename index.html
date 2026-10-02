@@ -120,7 +120,9 @@ label{display:block;font-family:var(--ui);font-weight:700;font-size:.72rem;lette
   text-transform:uppercase;color:var(--fosco);margin-bottom:8px}
 input{width:100%;padding:16px;border:2px solid var(--traco);background:#000;color:var(--creme);
   font-family:var(--ui);font-size:1.1rem;font-weight:500}
-input:focus{outline:none;border-color:var(--vermelho)}
+input:focus,select:focus{outline:none;border-color:var(--vermelho)}
+select{width:100%;padding:16px;border:2px solid var(--traco);background:#000;color:var(--creme);
+  font-family:var(--ui);font-size:1rem;font-weight:500}
 .erro{color:var(--vermelho);font-size:.85rem;font-weight:500}
 
 /* jogo */
@@ -298,6 +300,26 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 
 </section>
 
+<!-- CONFERINDO O CARTAO -->
+<section class="tela" id="t-checando">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <div class="porta">
+    <img class="urso" src="urso.png" alt="">
+    <p class="rot">Conferindo seu cartão…</p>
+  </div>
+</section>
+
+<!-- CARTAO RECUSADO -->
+<section class="tela" id="t-recusa">
+  <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
+  <div class="porta">
+    <img class="urso" src="cadeado.jpg" alt="" style="width:min(42vw,180px)">
+    <h2>Cartão não vale</h2>
+    <p class="nota" id="recusa-txt" style="max-width:34ch"></p>
+  </div>
+  <button class="btn ouro" data-ir="t-placar">Ver o placar</button>
+</section>
+
 <!-- PORTA DO TIME -->
 <section class="tela" id="t-porta">
   <div class="topo"><img src="logo.png" alt="Clandestino Cookies"></div>
@@ -402,9 +424,38 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     </div>
 
     <div class="bloco">
-      <div class="rot">Links para entregar na compra</div>
-      <div class="qrs" id="pn-qrs"></div>
-      <p class="nota">Imprima cada QR num cartãozinho e entregue junto com o cookie do sabor correspondente. Quem levar Confete recebe o QR vermelho, quem levar Granulado recebe o dourado.</p>
+      <div class="rot">Cartões de uso único</div>
+      <div class="cartoes" id="pn-estoque"></div>
+      <p class="nota">Cada cartão vale <strong>uma partida</strong>. Usou, queimou. Entregue um por cookie vendido, do sabor certo.</p>
+
+      <div class="linha" style="margin-top:4px">
+        <div>
+          <label for="g-time">Sabor</label>
+          <select id="g-time">
+            <option value="confete">Confete (vermelho)</option>
+            <option value="granulado">Granulado (dourado)</option>
+          </select>
+        </div>
+        <div>
+          <label for="g-qtd">Quantos</label>
+          <input id="g-qtd" type="number" min="1" max="200" value="30">
+        </div>
+      </div>
+      <button class="btn" id="b-gerar" style="margin-top:10px">Gerar e imprimir</button>
+      <p class="erro" id="g-erro" hidden></p>
+      <p class="nota" id="g-feito" hidden style="color:var(--dourado)"></p>
+
+      <p class="nota">Imprima em papel comum e corte. Guarde os dois sabores em montes separados no balcão.</p>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Devolver um cartão</div>
+      <div class="linha">
+        <input id="g-liberar" placeholder="Ex.: K7M2QX" maxlength="8" style="text-transform:uppercase">
+        <button class="btn vazio" id="b-liberar">Liberar de novo</button>
+      </div>
+      <p class="nota">Use quando um cartão queimou sem o cliente conseguir jogar.</p>
+      <p class="nota" id="g-lib-feito" hidden style="color:var(--dourado)"></p>
     </div>
 
     <div class="bloco">
@@ -494,11 +545,38 @@ function boot(){
   sb = window.supabase.createClient(url, String(C.SUPABASE_ANON_KEY).trim());
 
   var p = new URLSearchParams(location.search);
-  var t = (p.get("t")||"").toLowerCase();
   if(location.hash === "#painel"){ ir("t-painel"); return; }
 
-  if(TIMES[t]){ timeAtual=t; abrirPorta(t); }
-  else { ir("t-placar"); assinarPlacar(); }
+  var cod = (p.get("c")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(cod){ abrirComCodigo(cod); return; }
+
+  ir("t-placar"); assinarPlacar();
+}
+
+/* ---------- entrada por cartao ---------- */
+function abrirComCodigo(cod){
+  codigo = cod;
+  ir("t-checando");
+  sb.rpc("conferir_codigo",{p_codigo:cod}).then(function(r){
+    if(r.error){
+      recusar("Não deu pra conferir seu cartão agora. Tenta de novo em instantes.");
+      return;
+    }
+    var d=(r.data&&r.data[0])||{};
+    if(!d.valido){
+      recusar(d.motivo==="ja_usado"
+        ? "Este cartão já foi usado. Cada cookie vale uma partida — compre outro para jogar de novo."
+        : "Este cartão não existe. Confira o código impresso ou peça ajuda no caixa.");
+      return;
+    }
+    timeAtual = d.equipe;
+    abrirPorta(timeAtual);
+  });
+}
+
+function recusar(msg){
+  $("recusa-txt").textContent=msg;
+  ir("t-recusa");
 }
 
 /* ---------- porta do time ---------- */
@@ -512,7 +590,7 @@ function abrirPorta(t){
   ir("t-porta");
 }
 $("b-porta").addEventListener("click",function(){
-  if(jogadorId){ verificarLimite(); }
+  if(jogadorId){ gastarCodigo(); }
   else { $("ent-erro").hidden=true; ir("t-entrar"); setTimeout(function(){ try{$("i-nome").focus();}catch(e){} },150); }
 });
 
@@ -549,20 +627,37 @@ function cadastrar(){
     }
     jogadorId=r.data; jogadorNome=nome;
     ls("cc_jogador",jogadorId); ls("cc_nome",nome); ls("cc_zap",zap);
-    verificarLimite();
+    gastarCodigo();
   });
 }
 
-/* ---------- limite por aparelho ---------- */
-function verificarLimite(){
-  sb.rpc("jogadas_hoje",{p_device:deviceId}).then(function(r){
-    var n = r.error ? 0 : (r.data||0);
-    if(n >= (C.LIMITE_POR_APARELHO_DIA||4)){
-      $("bloq-txt").textContent="Este celular já jogou "+n+" vezes hoje. Volta amanhã com outro cookie — ou passa o link pra alguém do seu time.";
-      ir("t-bloqueio"); return;
-    }
-    iniciar();
-  });
+/* ---------- gasta o cartao e comeca ----------
+   O codigo queima aqui, uma vez so. Dois celulares tentando ao mesmo
+   tempo: o banco deixa so um passar.                                   */
+function gastarCodigo(){
+  if(!codigo){ iniciar(); return; }
+
+  var b=$("b-porta"); b.disabled=true; b.textContent="Abrindo…";
+
+  sb.rpc("usar_codigo",{p_codigo:codigo,p_jogador:jogadorId,p_device:deviceId})
+    .then(function(r){
+      b.disabled=false; b.textContent="Alimentar o urso";
+
+      if(r.error){
+        recusar("Não deu pra validar seu cartão agora. Confira a internet e tente de novo.");
+        return;
+      }
+      var d=(r.data&&r.data[0])||{};
+      if(!d.ok){
+        recusar(d.motivo==="ja_usado"
+          ? "Este cartão acabou de ser usado. Cada cookie vale uma partida."
+          : "Este cartão não existe mais. Peça ajuda no caixa.");
+        return;
+      }
+      timeAtual = d.equipe || timeAtual;
+      codigoGasto = codigo;
+      iniciar();
+    });
 }
 
 /* ---------- jogo: o urso come o cookie ----------
@@ -571,6 +666,7 @@ function verificarLimite(){
    A massa voltou ao inteiro → acabou.                                   */
 var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
 var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0, mult=1;
+var codigo="", codigoGasto="";
 
 function cfgRodada(n){
   var base=C.MORDIDAS_BASE||24, passo=C.MORDIDAS_PASSO||4;
@@ -989,24 +1085,132 @@ function entrarPainel(){
     $("i-pin").value="";
     $("pn-lock").hidden=true;
     $("pn-area").hidden=false;
-    montarQR();
+    carregarEstoque();
     carregarPainel();
   });
 }
 $("b-atualizar").addEventListener("click",carregarPainel);
 
-function montarQR(){
-  var base=location.origin+location.pathname;
-  var box=$("pn-qrs"); box.innerHTML="";
-  [["confete","Confete","#FF1F1F"],["granulado","Granulado","#D4A76A"]].forEach(function(t){
-    var url=base+"?t="+t[0];
-    var d=document.createElement("div"); d.className="qr";
-    d.innerHTML='<div class="rot" style="color:'+t[2]+'">Time '+t[1]+'</div><div class="caixa"></div><code>'+url+'</code>';
-    box.appendChild(d);
-    try{ new QRCode(d.querySelector(".caixa"),{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }
-    catch(e){ d.querySelector(".caixa").textContent="QR indisponível"; }
+/* ---------- cartoes de uso unico ---------- */
+function qrDataUrl(texto){
+  /* a biblioteca desenha num canvas escondido; devolvemos a imagem pronta */
+  var caixa=document.createElement("div");
+  caixa.style.cssText="position:fixed;left:-9999px;top:0";
+  document.body.appendChild(caixa);
+  var url="";
+  try{
+    new QRCode(caixa,{text:texto,width:260,height:260,correctLevel:QRCode.CorrectLevel.M});
+    var cv=caixa.querySelector("canvas");
+    if(cv) url=cv.toDataURL("image/png");
+    else { var img=caixa.querySelector("img"); if(img) url=img.src; }
+  }catch(e){}
+  caixa.remove();
+  return url;
+}
+
+function carregarEstoque(){
+  sb.rpc("painel_codigos",{p_senha:senhaPainel}).then(function(r){
+    var box=$("pn-estoque"); box.innerHTML="";
+    (r.data||[]).forEach(function(x){
+      var d=document.createElement("div"); d.className="cartao";
+      d.innerHTML='<div class="rot">'+(x.equipe==="confete"?"Confete":"Granulado")+' livres</div>'+
+                  '<div class="n">'+x.livres+'</div>'+
+                  '<div class="rot" style="margin-top:6px">'+x.usados+' já usados</div>';
+      box.appendChild(d);
+    });
   });
 }
+
+$("b-gerar").addEventListener("click",function(){
+  var time=$("g-time").value, qtd=parseInt($("g-qtd").value,10)||0;
+  var b=this;
+  $("g-erro").hidden=true; $("g-feito").hidden=true;
+  if(qtd<1||qtd>200){ $("g-erro").textContent="Escolha entre 1 e 200 cartões."; $("g-erro").hidden=false; return; }
+
+  /* sem a biblioteca de QR o cartão sai sem código e não serve pra nada */
+  if(typeof QRCode === "undefined"){
+    $("g-erro").textContent="A biblioteca que desenha o QR não carregou. Recarregue a página com a internet funcionando e tente de novo. Nenhum cartão foi criado.";
+    $("g-erro").hidden=false; return;
+  }
+
+  b.disabled=true; b.textContent="Gerando…";
+  sb.rpc("gerar_codigos",{p_senha:senhaPainel,p_time:time,p_quantidade:qtd}).then(function(r){
+    b.disabled=false; b.textContent="Gerar e imprimir";
+    if(r.error){
+      $("g-erro").textContent = /function|schema cache|does not exist/i.test(r.error.message||"")
+        ? "O banco ainda não tem os cartões. Rode o codigos.sql no Supabase."
+        : "Não deu: "+(r.error.message||"");
+      $("g-erro").hidden=false; return;
+    }
+    var lista=(r.data||[]).map(function(x){ return x.codigo; });
+    $("g-feito").textContent=lista.length+" cartões criados. A folha de impressão abriu em outra aba.";
+    $("g-feito").hidden=false;
+    carregarEstoque();
+    folhaDeImpressao(lista, time);
+  });
+});
+
+function folhaDeImpressao(codigos, time){
+  var base=location.origin+location.pathname;
+  var cor = time==="confete" ? "#FF1F1F" : "#D4A76A";
+  var nome = time==="confete" ? "CONFETE" : "GRANULADO";
+
+  var cartoes = codigos.map(function(c){
+    var url = base+"?c="+c;
+    var img = qrDataUrl(url);
+    return '<div class="c">'+
+             '<div class="t" style="color:'+cor+'">TIME '+nome+'</div>'+
+             (img?'<img src="'+img+'">':'<div class="semqr">QR NÃO GERADO — NÃO USE ESTE CARTÃO</div>')+
+             '<div class="cod">'+c+'</div>'+
+             '<div class="p">Aponte a câmera e alimente o urso</div>'+
+             '<div class="r">Vale 1 partida · até 12/10</div>'+
+           '</div>';
+  }).join("");
+
+  var html =
+    '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'+
+    '<title>Cartões '+nome+' — '+codigos.length+' unidades</title><style>'+
+    '@page{size:A4;margin:8mm}'+
+    'body{margin:0;font-family:system-ui,Arial,sans-serif;background:#fff;color:#000}'+
+    '.topo{padding:6mm 0;text-align:center;font-size:11pt}'+
+    '.topo b{color:'+cor+'}'+
+    '.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}'+
+    '.c{border:1.5pt dashed #999;border-radius:3mm;padding:4mm 3mm;text-align:center;'+
+       'break-inside:avoid;page-break-inside:avoid;background:#000;color:#fff}'+
+    '.c .t{font-size:9pt;font-weight:800;letter-spacing:.14em;margin-bottom:2mm}'+
+    '.c img{width:30mm;height:30mm;display:block;margin:0 auto;background:#fff;padding:1.5mm}'+
+    '.c .cod{font-family:ui-monospace,monospace;font-size:13pt;font-weight:700;'+
+            'letter-spacing:.14em;margin-top:2mm}'+
+    '.c .p{font-size:7pt;margin-top:1.5mm;color:#ccc}'+
+    '.c .r{font-size:6.5pt;margin-top:1mm;color:#888}'+
+    '.c .semqr{font-size:6pt;word-break:break-all;color:#ccc}'+
+    '@media print{.aviso{display:none}}'+
+    '.aviso{text-align:center;padding:4mm;font-size:10pt;color:#555}'+
+    '</style></head><body>'+
+    '<div class="aviso">Confira a visualização e mande imprimir. Recorte nas linhas tracejadas.</div>'+
+    '<div class="topo">Guerra dos Cookies · <b>TIME '+nome+'</b> · '+codigos.length+' cartões · '+
+      new Date().toLocaleString("pt-BR")+'</div>'+
+    '<div class="grade">'+cartoes+'</div>'+
+    '</body></html>';
+
+  var w=window.open("","_blank");
+  if(!w){ $("g-erro").textContent="O navegador bloqueou a aba de impressão. Libere pop-ups e gere de novo."; $("g-erro").hidden=false; return; }
+  w.document.write(html); w.document.close();
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 700);
+}
+
+$("b-liberar").addEventListener("click",function(){
+  var c=$("g-liberar").value.trim().toUpperCase();
+  if(!c) return;
+  var b=this; b.disabled=true;
+  sb.rpc("liberar_codigo",{p_senha:senhaPainel,p_codigo:c}).then(function(r){
+    b.disabled=false;
+    $("g-lib-feito").textContent = r.error ? ("Não deu: "+(r.error.message||"")) : r.data;
+    $("g-lib-feito").hidden=false;
+    $("g-liberar").value="";
+    carregarEstoque();
+  });
+});
 
 function dataCurta(v){
   if(!v) return "—";
