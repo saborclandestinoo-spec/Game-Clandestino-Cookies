@@ -515,7 +515,7 @@ function cadastrar(){
       e.hidden=false; return;
     }
     jogadorId=r.data; jogadorNome=nome;
-    ls("cc_jogador",jogadorId); ls("cc_nome",nome);
+    ls("cc_jogador",jogadorId); ls("cc_nome",nome); ls("cc_zap",zap);
     verificarLimite();
   });
 }
@@ -815,13 +815,50 @@ function terminar(){
   $("f-erro").hidden=true;
   ir("t-fim");
 
-  sb.from("jogadas").insert({ jogador_id:jogadorId, time:timeAtual, pontos:pts, device_id:deviceId })
+  salvarJogada(pts, true);
+}
+
+/* Grava a jogada. Se o cadastro deste celular sumiu do banco (a loja zerou os
+   dados), refaz o cadastro uma vez e tenta de novo, sem perder os pontos.     */
+function salvarJogada(valor, podeRefazer){
+  sb.from("jogadas")
+    .insert({ jogador_id:jogadorId, time:timeAtual, pontos:valor, device_id:deviceId })
     .then(function(r){
-      if(r.error){
-        $("f-erro").textContent="Sem internet na hora de salvar. Mostra esta tela no caixa.";
+      if(!r.error){ $("f-erro").hidden=true; return; }
+      console.error("[guerra] erro ao salvar jogada:", r.error);
+
+      var m=(r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||"");
+      var sumiu = r.error.code==="23503" || /foreign key|jogador_id|not present in table/i.test(m);
+
+      if(sumiu && podeRefazer && jogadorNome){
+        /* o jogador foi apagado no banco: recria com o mesmo nome e grava de novo */
+        var zap = ls("cc_zap") || "";
+        if(zap){
+          sb.rpc("entrar",{p_nome:jogadorNome,p_whatsapp:zap}).then(function(e2){
+            if(e2.error || !e2.data){ erroSalvar(r.error, true); return; }
+            jogadorId=e2.data; ls("cc_jogador",jogadorId);
+            salvarJogada(valor, false);
+          });
+          return;
+        }
+        try{ localStorage.removeItem("cc_jogador"); }catch(e){}
+        jogadorId=null;
+        $("f-erro").textContent="Seu cadastro foi reiniciado. Jogue de novo para contar os pontos.";
         $("f-erro").hidden=false;
+        return;
       }
+      erroSalvar(r.error, false);
     });
+}
+
+function erroSalvar(err, apos){
+  var m=(err.message||"")+" "+(err.details||"");
+  $("f-erro").textContent =
+    /Failed to fetch|NetworkError|network/i.test(m) ? "Sem internet na hora de salvar. Mostra esta tela no caixa."
+    : /23503|foreign key/i.test(m) ? "Seu cadastro não está mais no banco. Mostra esta tela no caixa."
+    : /violates check|pontos/i.test(m) ? "O banco recusou a pontuação. Mostra esta tela no caixa."
+    : "Não deu pra salvar: "+(err.message||"erro desconhecido")+". Mostra esta tela no caixa.";
+  $("f-erro").hidden=false;
 }
 $("b-zap").addEventListener("click",function(){
   var T=TIMES[timeAtual]||TIMES.confete;
