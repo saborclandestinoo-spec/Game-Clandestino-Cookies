@@ -29,6 +29,4 @@ window.CONFIG = {
   REGEN_FATOR: 1.16,     // quanto a regeneração acelera a cada cookie novo
   ACELERA_FOME: 30,      // a cada 30s a regeneração dobra (impede partida infinita)
   MASSA_INICIAL: 0.88    // folga com que cada cookie novo começa
-
-    DATA_INICIO: "2026-10-06",
 };
