@@ -277,6 +277,12 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 .tab .gr{color:var(--dourado)}
 .tab tr:last-child td{border-bottom:none}
 .tab .zap{color:var(--fosco);font-size:.78rem}
+.tab .cod{font-family:ui-monospace,monospace;font-weight:700;letter-spacing:.08em}
+.tab .livre{color:var(--dourado)}
+.tab .usado{color:var(--fosco)}
+.pino{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.pino.on{background:var(--dourado)}
+.pino.off{background:var(--traco);border:1px solid var(--fosco)}
 .aviso{border-left:4px solid var(--vermelho);padding:12px 14px;background:var(--preto-2);font-size:.88rem;line-height:1.5}
 .nota{font-size:.82rem;color:var(--fosco);line-height:1.55}
 .rolagem{overflow-x:auto}
@@ -509,6 +515,40 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
       <p class="nota" id="g-feito" hidden style="color:var(--dourado)"></p>
 
       <p class="nota">Imprima em papel comum e corte. Guarde os dois sabores em montes separados no balcão.</p>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Todos os cartões <span id="cod-qtd" class="mult"></span></div>
+      <div class="linha">
+        <div>
+          <label for="cod-filtro">Mostrar</label>
+          <select id="cod-filtro">
+            <option value="todos">Todos</option>
+            <option value="livres">Só os livres</option>
+            <option value="usados">Só os usados</option>
+          </select>
+        </div>
+        <div>
+          <label for="cod-time">Sabor</label>
+          <select id="cod-time">
+            <option value="">Os dois</option>
+            <option value="confete">Confete</option>
+            <option value="granulado">Granulado</option>
+          </select>
+        </div>
+      </div>
+      <div class="rolagem" style="margin-top:12px;max-height:420px;overflow-y:auto">
+        <table class="tab" id="cod-tabela"></table>
+      </div>
+      <div class="linha" style="margin-top:10px">
+        <button class="btn vazio" id="b-cod-csv">Copiar lista</button>
+      </div>
+      <textarea id="cod-csv" readonly hidden></textarea>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Lotes gerados</div>
+      <div class="rolagem"><table class="tab" id="cod-lotes"></table></div>
     </div>
 
     <div class="bloco">
@@ -1184,6 +1224,7 @@ function entrarPainel(){
     $("pn-lock").hidden=true;
     $("pn-area").hidden=false;
     carregarEstoque();
+    carregarCodigos();
     carregarPainel();
   });
 }
@@ -1244,6 +1285,7 @@ $("b-gerar").addEventListener("click",function(){
     $("g-feito").textContent=lista.length+" cartões criados. A folha de impressão abriu em outra aba.";
     $("g-feito").hidden=false;
     carregarEstoque();
+    carregarCodigos();
     folhaDeImpressao(lista, time);
   });
 });
@@ -1297,6 +1339,89 @@ function folhaDeImpressao(codigos, time){
   setTimeout(function(){ try{ w.print(); }catch(e){} }, 700);
 }
 
+/* ---------- lista de todos os cartões ---------- */
+$("cod-filtro").addEventListener("change",carregarCodigos);
+$("cod-time").addEventListener("change",carregarCodigos);
+
+function carregarCodigos(){
+  var filtro=$("cod-filtro").value, time=$("cod-time").value || null;
+  sb.rpc("painel_lista_codigos",{p_senha:senhaPainel,p_filtro:filtro,p_time:time,p_limite:1000})
+    .then(function(r){
+      var t=$("cod-tabela"); t.innerHTML="";
+      if(r.error){
+        t.innerHTML='<tr><td class="vazio">'+
+          (/function|schema cache|does not exist/i.test(r.error.message||"")
+            ? "Rode a parte nova do codigos.sql no Supabase."
+            : (r.error.message||"erro"))+'</td></tr>';
+        $("cod-qtd").textContent=""; return;
+      }
+      var d=r.data||[];
+      $("cod-qtd").textContent=d.length;
+      if(!d.length){ t.innerHTML='<tr><td class="vazio">Nenhum cartão aqui.</td></tr>'; return; }
+
+      var cab=document.createElement("tr");
+      ["Código","Sabor","Situação","Quem usou","Lote"].forEach(function(h){
+        var c=document.createElement("th"); c.textContent=h; cab.appendChild(c);
+      });
+      t.appendChild(cab);
+
+      d.forEach(function(x){
+        var tr=document.createElement("tr");
+        tr.appendChild(td(x.codigo,"cod "+(x.usado?"usado":"livre")));
+        tr.appendChild(td(x.equipe==="confete"?"Confete":"Granulado", x.equipe==="granulado"?"gr":"cf"));
+
+        var sit=document.createElement("td");
+        var pino=document.createElement("span");
+        pino.className="pino "+(x.usado?"off":"on");
+        sit.appendChild(pino);
+        sit.appendChild(document.createTextNode(x.usado ? dataCurta(x.usado_em) : "livre"));
+        tr.appendChild(sit);
+
+        tr.appendChild(td(x.nome || "—"));
+        tr.appendChild(td(x.lote || "—","zap"));
+        t.appendChild(tr);
+      });
+
+      var l=["codigo;sabor;situacao;usado_em;quem_usou;whatsapp;lote"];
+      d.forEach(function(x){
+        l.push([x.codigo,x.equipe,x.usado?"usado":"livre",
+                x.usado?dataCurta(x.usado_em):"",
+                (x.nome||"").replace(/;/g,","),x.whatsapp||"",x.lote||""].join(";"));
+      });
+      $("cod-csv").value=l.join("\n");
+    });
+
+  sb.rpc("painel_lotes",{p_senha:senhaPainel}).then(function(r){
+    var t=$("cod-lotes"); t.innerHTML="";
+    var d=(r.error?[]:(r.data||[]));
+    if(!d.length){ t.innerHTML='<tr><td class="vazio">Nenhum lote ainda.</td></tr>'; return; }
+    var cab=document.createElement("tr");
+    ["Lote","Sabor","Total","Livres","Usados","Gerado"].forEach(function(h,i){
+      var c=document.createElement("th"); if(i>=2&&i<=4) c.className="num";
+      c.textContent=h; cab.appendChild(c);
+    });
+    t.appendChild(cab);
+    d.forEach(function(x){
+      var tr=document.createElement("tr");
+      tr.appendChild(td(x.lote||"—","zap"));
+      tr.appendChild(td(x.equipe==="confete"?"Confete":"Granulado", x.equipe==="granulado"?"gr":"cf"));
+      tr.appendChild(td(x.total,"num"));
+      tr.appendChild(td(x.livres,"num"));
+      tr.appendChild(td(x.usados,"num"));
+      tr.appendChild(td(dataCurta(x.criado_em),"zap"));
+      t.appendChild(tr);
+    });
+  });
+}
+
+$("b-cod-csv").addEventListener("click",function(){
+  var t=$("cod-csv"), b=this;
+  function ok(){ b.textContent="Copiado!"; setTimeout(function(){ b.textContent="Copiar lista"; },1600); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(ok,function(){ t.hidden=false; t.select(); });
+  } else { t.hidden=false; t.select(); }
+});
+
 $("b-liberar").addEventListener("click",function(){
   var c=$("g-liberar").value.trim().toUpperCase();
   if(!c) return;
@@ -1307,6 +1432,7 @@ $("b-liberar").addEventListener("click",function(){
     $("g-lib-feito").hidden=false;
     $("g-liberar").value="";
     carregarEstoque();
+    carregarCodigos();
   });
 });
 
