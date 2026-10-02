@@ -58,9 +58,8 @@ p{margin:0;line-height:1.55}
 .topo img{width:clamp(185px,60vw,280px)}
 .selo{font-family:var(--display);font-size:.7rem;color:var(--vermelho);border:2px solid var(--vermelho);
   padding:5px 9px;transform:rotate(-4deg);white-space:nowrap;letter-spacing:.04em;align-self:center}
-/* no placar o carimbo dos dias fica no canto, fora do caminho do titulo */
-#t-placar .topo{position:relative}
-#t-placar .selo{position:absolute;top:2px;right:2px;transform:rotate(5deg);font-size:.6rem;padding:4px 7px}
+/* no placar o carimbo dos dias ocupa a primeira linha, reto, encostado à direita */
+#t-placar .selo{align-self:flex-end;transform:none;font-size:.64rem;padding:4px 9px}
 .chamada{font-family:var(--display);font-size:clamp(1.05rem,5vw,1.45rem);color:var(--creme);
   margin:4px 0 0;line-height:1.25;max-width:22ch}
 
@@ -111,7 +110,7 @@ p{margin:0;line-height:1.55}
 .premio::before{content:"";position:absolute;inset:0;pointer-events:none;overflow:hidden;
   background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(212,167,106,.05) 9px 18px)}
 .premio-pancho{width:clamp(104px,30vw,146px);flex:none;position:relative;z-index:2;
-  margin-top:-34px;margin-bottom:-6px;filter:drop-shadow(0 5px 14px rgba(0,0,0,.75))}
+  margin-top:-18px;margin-bottom:-4px;filter:drop-shadow(0 5px 14px rgba(0,0,0,.75))}
 .premio>div{position:relative;z-index:1;min-width:0}
 .premio-tit{font-family:var(--display);font-size:clamp(1.05rem,4.8vw,1.4rem);
   color:var(--dourado);line-height:1.2;margin:3px 0 0;text-wrap:balance}
