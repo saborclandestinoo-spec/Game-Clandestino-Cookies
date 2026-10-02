@@ -101,15 +101,19 @@ p{margin:0;line-height:1.55}
 .corda .fb{right:0;background:linear-gradient(270deg,var(--dourado-fundo),var(--dourado))}
 .pct{display:flex;justify-content:space-between;margin-top:9px;font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
 
-/* quanto da campanha já passou */
-.campanha{margin-top:16px;padding-top:14px;border-top:1px solid var(--traco)}
-.campanha-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:7px}
-.campanha-topo strong{font-family:var(--display);font-size:.92rem;color:var(--dourado);white-space:nowrap}
-.campanha-trilho{height:9px;background:#000;border:1.5px solid var(--traco);overflow:hidden}
-.campanha-trilho>i{display:block;height:100%;width:0;
-  background:linear-gradient(90deg,var(--vermelho-fundo),var(--vermelho) 55%,var(--dourado));
-  transition:width .8s cubic-bezier(.22,1,.36,1)}
-.campanha-pes{display:flex;justify-content:space-between;margin-top:6px;
+/* quanto da campanha já passou — bloco proprio, barra vermelha arredondada */
+.campanha{background:var(--preto-2);border:2px solid var(--traco);border-radius:18px;padding:15px 17px}
+.campanha-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.campanha-topo strong{font-family:var(--display);font-size:.95rem;color:var(--vermelho);white-space:nowrap}
+.campanha-trilho{height:14px;border-radius:999px;background:#000;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.9);overflow:hidden}
+.campanha-trilho>i{display:block;height:100%;width:0;border-radius:999px;position:relative;
+  background:linear-gradient(90deg,#8d0f0f,var(--vermelho));
+  box-shadow:0 0 12px rgba(255,31,31,.5);
+  transition:width .9s cubic-bezier(.22,1,.36,1)}
+.campanha-trilho>i::after{content:"";position:absolute;inset:0;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 55%)}
+.campanha-pes{display:flex;justify-content:space-between;margin-top:9px;
   font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fosco);font-weight:700}
 
 /* o premio em disputa, logo abaixo do placar */
@@ -322,17 +326,17 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
       <div class="f fb" id="f-gr" style="width:50%"></div>
     </div>
     <div class="pct"><span class="cf" id="pc-cf">50%</span><span class="gr" id="pc-gr">50%</span></div>
+  </div>
 
-    <div class="campanha">
-      <div class="campanha-topo">
-        <span class="rot" id="camp-rot">Campanha</span>
-        <strong id="camp-dias">—</strong>
-      </div>
-      <div class="campanha-trilho"><i id="camp-barra"></i></div>
-      <div class="campanha-pes">
-        <span id="camp-ini">—</span>
-        <span id="camp-fim">—</span>
-      </div>
+  <div class="campanha">
+    <div class="campanha-topo">
+      <span class="rot" id="camp-rot">Campanha</span>
+      <strong id="camp-dias">—</strong>
+    </div>
+    <div class="campanha-trilho"><i id="camp-barra"></i></div>
+    <div class="campanha-pes">
+      <span id="camp-ini">—</span>
+      <span id="camp-fim">—</span>
     </div>
   </div>
 
