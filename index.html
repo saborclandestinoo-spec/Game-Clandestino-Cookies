@@ -221,6 +221,17 @@ input:focus{outline:none;border-color:var(--vermelho)}
 .qr code{font-size:.7rem;color:var(--fosco);font-family:ui-monospace,monospace}
 textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2px solid var(--traco);
   padding:12px;font-family:ui-monospace,monospace;font-size:.72rem;resize:vertical}
+.btn.confete{background:var(--vermelho);color:#fff}
+.tab{width:100%;border-collapse:collapse;font-size:.82rem;white-space:nowrap}
+.tab th{text-align:left;font-weight:700;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--fosco);padding:8px 12px 8px 0;border-bottom:2px solid var(--traco)}
+.tab td{padding:9px 12px 9px 0;border-bottom:1px solid var(--traco);font-variant-numeric:tabular-nums}
+.tab td:first-child,.tab th:first-child{padding-left:2px}
+.tab .num{text-align:right;padding-right:14px}
+.tab .cf{color:var(--vermelho)}
+.tab .gr{color:var(--dourado)}
+.tab tr:last-child td{border-bottom:none}
+.tab .zap{color:var(--fosco);font-size:.78rem}
 .aviso{border-left:4px solid var(--vermelho);padding:12px 14px;background:var(--preto-2);font-size:.88rem;line-height:1.5}
 .nota{font-size:.82rem;color:var(--fosco);line-height:1.55}
 .rolagem{overflow-x:auto}
@@ -285,7 +296,6 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 
   <p class="nota">O sabor que vencer entra no cardápio fixo da loja. Cada cookie vendido vale 150 pontos, mais o que você comer no jogo.</p>
 
-  <div class="rodape"><button class="btn vazio" id="b-painel-ir">Painel da loja</button></div>
 </section>
 
 <!-- PORTA DO TIME -->
@@ -371,14 +381,25 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
 
   <div id="pn-lock">
     <label for="i-pin">Senha da loja</label>
-    <input id="i-pin" type="password" inputmode="numeric" maxlength="12" placeholder="••••">
+    <input id="i-pin" type="password" autocomplete="current-password" placeholder="••••••">
     <p class="erro" id="pin-erro" hidden>Senha errada.</p>
     <div style="height:14px"></div>
     <button class="btn" id="b-pin">Entrar</button>
+    <p class="nota" style="margin-top:14px">A senha é conferida no banco. Sem ela, nenhum dado de cliente sai daqui.</p>
   </div>
 
-  <div id="pn-area" hidden style="display:flex;flex-direction:column;gap:22px">
+  <div id="pn-area" hidden style="display:flex;flex-direction:column;gap:24px">
     <div class="cartoes" id="pn-cards"></div>
+
+    <div class="bloco">
+      <div class="rot">Cadastros <span id="pn-qtd" class="mult"></span></div>
+      <div class="rolagem"><table class="tab" id="pn-tabela"></table></div>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Últimas jogadas</div>
+      <div class="rolagem"><table class="tab" id="pn-ultimas"></table></div>
+    </div>
 
     <div class="bloco">
       <div class="rot">Links para entregar na compra</div>
@@ -387,17 +408,29 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     </div>
 
     <div class="bloco">
-      <div class="rot">Top compradores</div>
-      <ol class="lista" id="pn-comp"></ol>
-    </div>
-
-    <div class="bloco">
       <div class="rot">Exportar (CSV)</div>
       <textarea id="pn-csv" readonly></textarea>
       <div class="linha">
         <button class="btn vazio" id="b-csv">Copiar CSV</button>
-        <button class="btn vazio" id="b-atualizar">Atualizar dados</button>
+        <button class="btn vazio" id="b-atualizar">Atualizar</button>
       </div>
+    </div>
+
+    <div class="bloco">
+      <div class="rot" style="color:var(--vermelho)">Zona de perigo</div>
+      <div class="linha">
+        <button class="btn vazio" id="b-zerar">Zerar jogadas</button>
+        <button class="btn vazio" id="b-zerar-tudo">Zerar tudo</button>
+      </div>
+      <p class="nota"><strong>Zerar jogadas</strong> apaga o placar e libera o limite diário de todos os aparelhos, mantendo os cadastros. <strong>Zerar tudo</strong> apaga também os cadastros.</p>
+      <div id="pn-confirma" hidden>
+        <p class="aviso" id="pn-confirma-txt"></p>
+        <div class="linha" style="margin-top:10px">
+          <button class="btn confete" id="b-confirma">Confirmar</button>
+          <button class="btn vazio" id="b-cancela">Cancelar</button>
+        </div>
+      </div>
+      <p class="nota" id="pn-feito" hidden style="color:var(--dourado)"></p>
     </div>
   </div>
 
@@ -928,15 +961,37 @@ function assinarPlacar(){
   setInterval(function(){ if($("t-placar").classList.contains("on")) carregarPlacar(); },20000);
 }
 
-/* ---------- painel ---------- */
-var liberado=false;
-$("b-painel-ir").addEventListener("click",function(){ ir("t-painel"); });
-$("b-pin").addEventListener("click",testarPin);
-$("i-pin").addEventListener("keydown",function(e){ if(e.key==="Enter") testarPin(); });
-function testarPin(){
-  if($("i-pin").value.trim()===String(C.SENHA_PAINEL)){
-    liberado=true; $("pn-lock").hidden=true; $("pn-area").hidden=false; montarQR(); carregarPainel();
-  } else { $("pin-erro").hidden=false; }
+/* ---------- painel da loja ----------
+   A senha nao fica no site: ela e conferida no banco. Sem a senha certa,
+   nenhuma funcao devolve dado nenhum.                                     */
+var senhaPainel="";
+
+$("b-pin").addEventListener("click",entrarPainel);
+$("i-pin").addEventListener("keydown",function(e){ if(e.key==="Enter") entrarPainel(); });
+
+function entrarPainel(){
+  var s=$("i-pin").value.trim();
+  if(!s) return;
+  var b=$("b-pin"); b.disabled=true; b.textContent="Conferindo…";
+  $("pin-erro").hidden=true;
+
+  sb.rpc("painel_ok",{p_senha:s}).then(function(r){
+    b.disabled=false; b.textContent="Entrar";
+    if(r.error){
+      $("pin-erro").textContent = /function|schema cache|does not exist/i.test(r.error.message||"")
+        ? "O banco ainda não tem o painel. Rode o painel.sql no Supabase."
+        : "Erro do banco: "+(r.error.message||"");
+      $("pin-erro").hidden=false; return;
+    }
+    if(!r.data){ $("pin-erro").textContent="Senha errada."; $("pin-erro").hidden=false; return; }
+
+    senhaPainel=s;
+    $("i-pin").value="";
+    $("pn-lock").hidden=true;
+    $("pn-area").hidden=false;
+    montarQR();
+    carregarPainel();
+  });
 }
 $("b-atualizar").addEventListener("click",carregarPainel);
 
@@ -953,42 +1008,134 @@ function montarQR(){
   });
 }
 
+function dataCurta(v){
+  if(!v) return "—";
+  var d=new Date(v);
+  return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" "+
+         d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+}
+function zapBonito(n){
+  var d=String(n||"").replace(/\D/g,"");
+  if(d.length===11) return d.replace(/(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
+  if(d.length===10) return d.replace(/(\d{2})(\d{4})(\d{4})/,"($1) $2-$3");
+  return d||"—";
+}
+function td(txt,cls){
+  var c=document.createElement("td");
+  if(cls) c.className=cls;
+  c.textContent=txt;
+  return c;
+}
+
 function carregarPainel(){
-  sb.from("v_placar").select("*").then(function(r){
+  /* resumo */
+  sb.rpc("painel_resumo",{p_senha:senhaPainel}).then(function(r){
     var box=$("pn-cards"); box.innerHTML="";
-    var totalCookies=0, totalPontos=0;
-    (r.data||[]).forEach(function(l){ totalCookies+=l.cookies; totalPontos+=l.pontos; });
-    var cards=[["Cookies vendidos",totalCookies],["Pontos no total",totalPontos]];
-    (r.data||[]).forEach(function(l){
-      cards.push([(l.time==="confete"?"Confete":"Granulado")+" — pontos", l.pontos]);
-    });
-    cards.forEach(function(c){
-      var d=document.createElement("div"); d.className="cartao";
-      d.innerHTML='<div class="rot">'+c[0]+'</div><div class="n">'+c[1]+'</div>';
-      box.appendChild(d);
+    var d=(r.data&&r.data[0])||{};
+    [["Cadastros",d.jogadores||0],["Jogadas",d.jogadas||0],["Jogadas hoje",d.jogadas_hoje||0],
+     ["Aparelhos",d.aparelhos||0],["Cookies confete",d.cookies_confete||0],
+     ["Cookies granulado",d.cookies_granulado||0]].forEach(function(c){
+      var e=document.createElement("div"); e.className="cartao";
+      e.innerHTML='<div class="rot">'+c[0]+'</div><div class="n">'+c[1]+'</div>';
+      box.appendChild(e);
     });
   });
 
-  sb.from("v_top_compradores").select("*").limit(50).then(function(r){
+  /* cadastros com telefone completo */
+  sb.rpc("painel_jogadores",{p_senha:senhaPainel}).then(function(r){
+    var t=$("pn-tabela"); t.innerHTML="";
     var dados=r.data||[];
-    pintar($("pn-comp"), dados.slice(0,15), function(x){
-      return { nome:x.nome, sub:"•••• "+x.final_whatsapp, time:x.time_favorito,
-               val:x.cookies, unidade:x.cookies===1?"cookie":"cookies" };
-    }, "Ninguém comprou ainda.");
-    var l=["posicao;nome;final_whatsapp;cookies;pontos;time_favorito;ultima_compra"];
+    $("pn-qtd").textContent=dados.length;
+
+    if(r.error){ t.innerHTML='<tr><td class="vazio">'+(r.error.message||"erro")+'</td></tr>'; return; }
+    if(!dados.length){ t.innerHTML='<tr><td class="vazio">Ninguém se cadastrou ainda.</td></tr>'; return; }
+
+    var cab=document.createElement("tr");
+    ["#","Nome","WhatsApp","Jogadas","Pontos","Melhor","Time","Última"].forEach(function(h,i){
+      var c=document.createElement("th");
+      if(i>=3&&i<=5) c.className="num";
+      c.textContent=h; cab.appendChild(c);
+    });
+    t.appendChild(cab);
+
     dados.forEach(function(x,i){
-      l.push([i+1,x.nome.replace(/;/g,","),x.final_whatsapp,x.cookies,x.pontos,x.time_favorito,
-              new Date(x.ultima_compra).toLocaleString("pt-BR")].join(";"));
+      var tr=document.createElement("tr");
+      tr.appendChild(td(i+1));
+      tr.appendChild(td(x.nome));
+      tr.appendChild(td(zapBonito(x.whatsapp),"zap"));
+      tr.appendChild(td(x.cookies,"num"));
+      tr.appendChild(td(x.pontos,"num"));
+      tr.appendChild(td(x.melhor,"num"));
+      tr.appendChild(td(x.time_favorito==="confete"?"Confete":x.time_favorito==="granulado"?"Granulado":"—",
+                        x.time_favorito==="granulado"?"gr":"cf"));
+      tr.appendChild(td(dataCurta(x.ultima)));
+      t.appendChild(tr);
+    });
+
+    var l=["posicao;nome;whatsapp;jogadas;pontos;melhor;time_favorito;primeira;ultima"];
+    dados.forEach(function(x,i){
+      l.push([i+1,String(x.nome).replace(/;/g,","),x.whatsapp,x.cookies,x.pontos,x.melhor,
+              x.time_favorito||"",dataCurta(x.primeira),dataCurta(x.ultima)].join(";"));
     });
     $("pn-csv").value=l.join("\n");
   });
+
+  /* ultimas jogadas */
+  sb.rpc("painel_jogadas",{p_senha:senhaPainel,p_limite:40}).then(function(r){
+    var t=$("pn-ultimas"); t.innerHTML="";
+    var dados=r.data||[];
+    if(!dados.length){ t.innerHTML='<tr><td class="vazio">Nenhuma jogada ainda.</td></tr>'; return; }
+
+    var cab=document.createElement("tr");
+    ["Quando","Nome","Time","Pontos"].forEach(function(h,i){
+      var c=document.createElement("th"); if(i===3) c.className="num";
+      c.textContent=h; cab.appendChild(c);
+    });
+    t.appendChild(cab);
+
+    dados.forEach(function(x){
+      var tr=document.createElement("tr");
+      tr.appendChild(td(dataCurta(x.quando)));
+      tr.appendChild(td(x.nome));
+      tr.appendChild(td(x.equipe==="confete"?"Confete":"Granulado", x.equipe==="granulado"?"gr":"cf"));
+      tr.appendChild(td(x.pontos,"num"));
+      t.appendChild(tr);
+    });
+  });
 }
+
 $("b-csv").addEventListener("click",function(){
   var t=$("pn-csv"), b=this;
   function ok(){ b.textContent="Copiado!"; setTimeout(function(){ b.textContent="Copiar CSV"; },1600); }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(t.value).then(ok,function(){ t.select(); });
   } else { t.select(); }
+});
+
+/* ---------- zona de perigo ---------- */
+var apagarTudo=false;
+$("b-zerar").addEventListener("click",function(){ pedirConfirma(false); });
+$("b-zerar-tudo").addEventListener("click",function(){ pedirConfirma(true); });
+$("b-cancela").addEventListener("click",function(){ $("pn-confirma").hidden=true; });
+
+function pedirConfirma(tudo){
+  apagarTudo=tudo;
+  $("pn-feito").hidden=true;
+  $("pn-confirma-txt").textContent = tudo
+    ? "Isso apaga TODAS as jogadas E TODOS os cadastros. Não dá para desfazer. Copie o CSV antes."
+    : "Isso apaga todas as jogadas: o placar zera e todo aparelho volta a poder jogar hoje. Os cadastros ficam.";
+  $("pn-confirma").hidden=false;
+}
+
+$("b-confirma").addEventListener("click",function(){
+  var b=this; b.disabled=true; b.textContent="Apagando…";
+  sb.rpc("painel_zerar",{p_senha:senhaPainel,p_tudo:apagarTudo}).then(function(r){
+    b.disabled=false; b.textContent="Confirmar";
+    $("pn-confirma").hidden=true;
+    $("pn-feito").textContent = r.error ? ("Não deu: "+(r.error.message||"")) : r.data;
+    $("pn-feito").hidden=false;
+    carregarPainel();
+  });
 });
 
 boot();
