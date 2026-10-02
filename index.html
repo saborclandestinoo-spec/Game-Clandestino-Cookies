@@ -483,6 +483,24 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <div class="cartoes" id="pn-cards"></div>
 
     <div class="bloco">
+      <div class="rot">Datas da campanha</div>
+      <div class="linha">
+        <div>
+          <label for="dt-ini">Começa em</label>
+          <input id="dt-ini" type="date">
+        </div>
+        <div>
+          <label for="dt-fim">Apuração</label>
+          <input id="dt-fim" type="date">
+        </div>
+      </div>
+      <button class="btn" id="b-datas" style="margin-top:10px">Salvar datas</button>
+      <p class="erro" id="dt-erro" hidden></p>
+      <p class="nota" id="dt-feito" hidden style="color:var(--dourado)"></p>
+      <p class="nota">A barra de progresso no placar segue estas datas. Vale para todos os celulares na hora.</p>
+    </div>
+
+    <div class="bloco">
       <div class="rot">Cadastros <span id="pn-qtd" class="mult"></span></div>
       <div class="rolagem"><table class="tab" id="pn-tabela"></table></div>
     </div>
@@ -1129,13 +1147,20 @@ function carregarPlacar(){
     }, "Ninguém alimentou o Pancho ainda.");
   });
 
-  pintarCampanha();
+  sb.rpc("datas_campanha").then(function(r){
+    if(!r.error && r.data && r.data[0]) DATAS = r.data[0];
+    pintarCampanha();
+  });
 }
 
 /* ---------- quanto da campanha já passou ---------- */
+var DATAS = null;   /* preenchido pelo banco; o config.js so vale se o banco falhar */
+
 function pintarCampanha(){
-  var ini = new Date((C.DATA_INICIO  ||"2026-10-06")+"T00:00:00-03:00");
-  var fim = new Date((C.DATA_APURACAO||"2026-10-12")+"T23:59:59-03:00");
+  var dIni = (DATAS && DATAS.inicio)   || C.DATA_INICIO   || "2026-10-06";
+  var dFim = (DATAS && DATAS.apuracao) || C.DATA_APURACAO || "2026-10-12";
+  var ini = new Date(dIni+"T00:00:00-03:00");
+  var fim = new Date(dFim+"T23:59:59-03:00");
   var agora = new Date();
 
   var dp=$("premio-data");
@@ -1225,6 +1250,7 @@ function entrarPainel(){
     $("pn-area").hidden=false;
     carregarEstoque();
     carregarCodigos();
+    carregarDatas();
     carregarPainel();
   });
 }
@@ -1338,6 +1364,46 @@ function folhaDeImpressao(codigos, time){
   w.document.write(html); w.document.close();
   setTimeout(function(){ try{ w.print(); }catch(e){} }, 700);
 }
+
+/* ---------- datas da campanha ---------- */
+function carregarDatas(){
+  sb.rpc("datas_campanha").then(function(r){
+    if(r.error || !r.data || !r.data[0]){
+      $("dt-erro").textContent = /function|schema cache|does not exist/i.test((r.error&&r.error.message)||"")
+        ? "Rode a parte nova do painel.sql no Supabase."
+        : "Não deu pra ler as datas.";
+      $("dt-erro").hidden=false; return;
+    }
+    $("dt-erro").hidden=true;
+    $("dt-ini").value = r.data[0].inicio   || "";
+    $("dt-fim").value = r.data[0].apuracao || "";
+  });
+}
+
+$("b-datas").addEventListener("click",function(){
+  var ini=$("dt-ini").value, fim=$("dt-fim").value, b=this;
+  $("dt-erro").hidden=true; $("dt-feito").hidden=true;
+
+  if(!ini || !fim){ $("dt-erro").textContent="Preencha as duas datas."; $("dt-erro").hidden=false; return; }
+  if(fim < ini){ $("dt-erro").textContent="A apuração não pode ser antes do início."; $("dt-erro").hidden=false; return; }
+
+  b.disabled=true; b.textContent="Salvando…";
+  sb.rpc("salvar_datas",{p_senha:senhaPainel,p_inicio:ini,p_apuracao:fim}).then(function(r){
+    b.disabled=false; b.textContent="Salvar datas";
+    if(r.error){
+      var m=r.error.message||"";
+      $("dt-erro").textContent = /apuracao_antes_do_inicio/.test(m) ? "A apuração não pode ser antes do início."
+        : /periodo_longo_demais/.test(m) ? "Período longo demais (máximo 120 dias)."
+        : /function|schema cache|does not exist/i.test(m) ? "Rode a parte nova do painel.sql no Supabase."
+        : "Não deu: "+m;
+      $("dt-erro").hidden=false; return;
+    }
+    $("dt-feito").textContent=r.data;
+    $("dt-feito").hidden=false;
+    DATAS = {inicio:ini, apuracao:fim};
+    pintarCampanha();
+  });
+});
 
 /* ---------- lista de todos os cartões ---------- */
 $("cod-filtro").addEventListener("change",carregarCodigos);
