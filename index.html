@@ -104,18 +104,29 @@ p{margin:0;line-height:1.55}
 .pct{display:flex;justify-content:space-between;margin-top:9px;font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
 
 /* o premio em disputa, logo abaixo do placar */
-.premio{display:flex;align-items:center;gap:16px;border:2px solid var(--dourado);
+/* bloco compacto; o Pancho se apoia na base e passa a cabeça por cima da moldura */
+.premio{border:2px solid var(--dourado);
   background:linear-gradient(100deg,rgba(212,167,106,.14),rgba(212,167,106,.03));
-  padding:14px 16px;position:relative;margin-top:26px}
+  padding:9px 12px 9px 0;position:relative;margin-top:44px;min-height:80px;
+  display:flex;align-items:center}
 .premio::before{content:"";position:absolute;inset:0;pointer-events:none;overflow:hidden;
   background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(212,167,106,.05) 9px 18px)}
-.premio-pancho{width:clamp(104px,30vw,146px);flex:none;position:relative;z-index:2;
-  margin-top:-18px;margin-bottom:-4px;filter:drop-shadow(0 5px 14px rgba(0,0,0,.75))}
-.premio>div{position:relative;z-index:1;min-width:0}
-.premio-tit{font-family:var(--display);font-size:clamp(1.05rem,4.8vw,1.4rem);
-  color:var(--dourado);line-height:1.2;margin:3px 0 0;text-wrap:balance}
-.premio-sub{font-size:.82rem;color:var(--fosco);line-height:1.5;margin:6px 0 0;max-width:46ch}
+.premio-pancho{position:absolute;left:6px;bottom:0;width:clamp(104px,31vw,146px);z-index:2;
+  filter:drop-shadow(0 5px 14px rgba(0,0,0,.75))}
+.premio>div{position:relative;z-index:1;min-width:0;
+  padding-left:clamp(114px,33vw,158px)}
+.premio-tit{font-family:var(--display);font-size:clamp(.98rem,4.3vw,1.25rem);
+  color:var(--dourado);line-height:1.2;margin:2px 0 0;text-wrap:balance}
+.premio-sub{font-size:.76rem;color:var(--fosco);line-height:1.45;margin:4px 0 0;max-width:44ch}
 .premio-sub span{color:var(--creme);font-weight:700}
+/* em telas bem estreitas o texto encolhe para a cabeça continuar aparecendo */
+@media (max-width:379px){
+  .premio{min-height:74px}
+  .premio-pancho{width:98px;left:4px}
+  .premio>div{padding-left:104px}
+  .premio-tit{font-size:.92rem}
+  .premio-sub{font-size:.7rem;line-height:1.38}
+}
 
 /* listas */
 .bloco{display:flex;flex-direction:column;gap:12px}
@@ -310,7 +321,7 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <div>
       <div class="rot">Em disputa</div>
       <p class="premio-tit">Qual cookie fica no cardápio?</p>
-      <p class="premio-sub">O sabor que ganhar dia <span id="premio-data">12/10</span> entra no cardápio fixo da loja. Cada cookie vendido é um voto.</p>
+      <p class="premio-sub">Quem ganhar dia <span id="premio-data">12/10</span> entra no cardápio fixo. Cada cookie vendido é um voto.</p>
     </div>
   </div>
 
