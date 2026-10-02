@@ -104,6 +104,20 @@ p{margin:0;line-height:1.55}
 .corda .fb{right:0;background:linear-gradient(270deg,var(--dourado-fundo),var(--dourado))}
 .pct{display:flex;justify-content:space-between;margin-top:9px;font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
 
+/* o premio em disputa, logo abaixo do placar */
+.premio{display:flex;align-items:center;gap:14px;border:2px solid var(--dourado);
+  background:linear-gradient(100deg,rgba(212,167,106,.14),rgba(212,167,106,.03));
+  padding:14px 16px;position:relative;overflow:hidden}
+.premio::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(212,167,106,.05) 9px 18px)}
+.premio-pancho{width:clamp(56px,17vw,78px);flex:none;position:relative;z-index:1;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.6))}
+.premio>div{position:relative;z-index:1;min-width:0}
+.premio-tit{font-family:var(--display);font-size:clamp(1.05rem,4.8vw,1.4rem);
+  color:var(--dourado);line-height:1.2;margin:3px 0 0;text-wrap:balance}
+.premio-sub{font-size:.82rem;color:var(--fosco);line-height:1.5;margin:6px 0 0}
+.premio-sub span{color:var(--creme);font-weight:700}
+
 /* listas */
 .bloco{display:flex;flex-direction:column;gap:12px}
 ol.lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
@@ -270,7 +284,6 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     <img src="logo.png" alt="Clandestino Cookies">
     <div class="selo" id="selo-dias">12 DE OUTUBRO</div>
     <span class="fita">Guerra dos Cookies</span>
-    <p class="chamada">Qual cookie fica no cardápio?</p>
   </div>
 
   <div class="arena">
@@ -291,6 +304,15 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
       <div class="f fb" id="f-gr" style="width:50%"></div>
     </div>
     <div class="pct"><span class="cf" id="pc-cf">50%</span><span class="gr" id="pc-gr">50%</span></div>
+  </div>
+
+  <div class="premio">
+    <img src="urso-boca.png" alt="" class="premio-pancho">
+    <div>
+      <div class="rot">Em disputa</div>
+      <p class="premio-tit">Qual cookie fica no cardápio?</p>
+      <p class="premio-sub">O sabor que ganhar dia <span id="premio-data">12/10</span> entra no cardápio fixo da loja. Cada cookie vendido é um voto.</p>
+    </div>
   </div>
 
   <div class="bloco">
@@ -1034,6 +1056,8 @@ function carregarPlacar(){
   });
 
   var alvo=new Date((C.DATA_APURACAO||"2026-10-12")+"T23:59:59-03:00");
+  var dp=$("premio-data");
+  if(dp) dp.textContent=alvo.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
   var dias=Math.ceil((alvo-new Date())/86400000);
   $("selo-dias").textContent = dias>1 ? ("FALTAM "+dias+" DIAS") : dias===1 ? "ÚLTIMO DIA" : dias===0 ? "APURAÇÃO HOJE" : "ENCERRADO";
 }
