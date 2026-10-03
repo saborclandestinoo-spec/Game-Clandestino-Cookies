@@ -11,7 +11,17 @@ window.CONFIG = {
   LIMITE_POR_APARELHO_DIA: 4,  // quantas partidas o mesmo celular pode jogar por dia
   DATA_APURACAO: "2026-10-12", // dia em que a guerra termina
   INSTAGRAM: "@clandestinocookies",
- 
+  
+ // ---------- Folha de adesivos ----------
+  // Medidas em milimetros. Com estes valores cabem 50 adesivos por folha,
+  // cada um com 55,6 x 40,8 mm.
+  ADESIVO_FOLHA_LARGURA: 300,  // 30 cm
+  ADESIVO_FOLHA_ALTURA:  445,  // 44,5 cm
+  ADESIVO_COLUNAS: 5,
+  ADESIVO_LINHAS:  10,
+  ADESIVO_MARGEM:  5,          // borda da folha
+  ADESIVO_ESPACO:  3,          // espaco entre adesivos
+  
   // ---------- Pontos ----------
   BONUS_POR_COOKIE: 150,        // pontos que cada cookie VENDIDO garante ao time
   PONTOS_POR_MORDIDA: 0.25,     // converte os pontos do jogo em pontos do time
