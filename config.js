@@ -24,10 +24,11 @@ window.CONFIG = {
   
   // ---------- Pontos ----------
   BONUS_POR_COOKIE: 150,        // pontos que cada cookie VENDIDO garante ao time
-  PONTOS_POR_MORDIDA: 0.25,     // converte os pontos do jogo em pontos do time
-  MULT_MAX: 5,                  // multiplicador maximo (cookie 5 em diante)
-  BONUS_POR_COOKIE_COMIDO: 10,  // pontos extras por cookie zerado dentro do jogo
+  PONTOS_POR_MORDIDA: 0.8,     // converte os pontos do jogo em pontos do time
+  MULT_MAX: 16,                  // multiplicador maximo (cookie 5 em diante)
+  BONUS_POR_COOKIE_COMIDO: 20,  // pontos extras por cookie zerado dentro do jogo
   TETO_PONTOS: 300,             // teto da partida, para um craque não desequilibrar
+  PISO_PONTOS: 30,              // minimo garantido: ninguem sai de maos vazias
  
   // ---------- Dificuldade ----------
   // Cada toque arranca uma mordida. A massa se regenera sozinha e o urso
