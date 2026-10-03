@@ -559,8 +559,10 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
         <table class="tab" id="cod-tabela"></table>
       </div>
       <div class="linha" style="margin-top:10px">
+        <button class="btn" id="b-cod-imprimir">Imprimir estes</button>
         <button class="btn vazio" id="b-cod-csv">Copiar lista</button>
       </div>
+      <p class="nota">Imprime exatamente o que está na lista acima, seguindo os dois filtros. Para reimprimir um lote inteiro, use o botão na tabela de lotes.</p>
       <textarea id="cod-csv" readonly hidden></textarea>
     </div>
 
@@ -1312,14 +1314,15 @@ $("b-gerar").addEventListener("click",function(){
     $("g-feito").hidden=false;
     carregarEstoque();
     carregarCodigos();
-    folhaDeImpressao(lista, time);
+    folhaDeImpressao(lista.map(function(c){ return {codigo:c, equipe:time}; }), "Lote recém-gerado");
   });
 });
 
-function folhaDeImpressao(codigos, time){
+/* itens = [{codigo, equipe}] — cada adesivo sai na cor do seu time */
+function folhaDeImpressao(itens, titulo){
   var base = location.origin + location.pathname;
-  var cor  = time==="confete" ? "#FF1F1F" : "#D4A76A";
-  var nome = time==="confete" ? "CONFETE"  : "GRANULADO";
+  var COR  = {confete:"#FF1F1F", granulado:"#D4A76A"};
+  var NOME = {confete:"CONFETE",  granulado:"GRANULADO"};
 
   /* medidas da folha, em milimetros */
   var FL = C.ADESIVO_FOLHA_LARGURA || 300;
@@ -1337,13 +1340,15 @@ function folhaDeImpressao(codigos, time){
   var qr   = Math.min(alt - 6, larg * 0.56);
   var texto = larg - qr - 9;
 
-  var cartoes = codigos.map(function(c){
-    var img = qrDataUrl(base + "?c=" + c);
+  var cartoes = itens.map(function(it){
+    var img = qrDataUrl(base + "?c=" + it.codigo);
+    var cor = COR[it.equipe] || COR.confete;
+    var nm  = NOME[it.equipe] || NOME.confete;
     return '<div class="a">' +
              (img ? '<img src="'+img+'">' : '<div class="semqr">SEM QR</div>') +
              '<div class="t">' +
-               '<div class="tm">TIME<br>'+nome+'</div>' +
-               '<div class="cd">'+c+'</div>' +
+               '<div class="tm" style="color:'+cor+'">TIME<br>'+nm+'</div>' +
+               '<div class="cd">'+it.codigo+'</div>' +
                '<div class="vl">vale 1 partida</div>' +
              '</div>' +
            '</div>';
@@ -1351,7 +1356,7 @@ function folhaDeImpressao(codigos, time){
 
   var html =
     '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'+
-    '<title>Adesivos '+nome+' — '+codigos.length+' unidades</title><style>'+
+    '<title>Adesivos — '+itens.length+' unidades</title><style>'+
     '@page{size:'+FL+'mm '+FA+'mm;margin:0}'+
     'html,body{margin:0;padding:0;background:#fff;font-family:system-ui,Arial,sans-serif;color:#000}'+
     '.folha{width:'+FL+'mm;padding:'+MG+'mm;box-sizing:border-box;'+
@@ -1366,7 +1371,7 @@ function folhaDeImpressao(codigos, time){
     '.a img{width:'+qr.toFixed(2)+'mm;height:'+qr.toFixed(2)+'mm;'+
            'background:#fff;padding:1mm;border-radius:1mm;box-sizing:border-box;flex:none}'+
     '.a .t{width:'+texto.toFixed(2)+'mm;text-align:center;line-height:1.1}'+
-    '.a .tm{font-size:5.5pt;font-weight:800;letter-spacing:.06em;color:'+cor+'}'+
+    '.a .tm{font-size:5.5pt;font-weight:800;letter-spacing:.06em}'+
     '.a .cd{font-family:ui-monospace,"Courier New",monospace;font-size:10pt;font-weight:700;'+
            'letter-spacing:.06em;margin:1mm 0}'+
     '.a .vl{font-size:4.6pt;color:#aaa}'+
@@ -1380,9 +1385,10 @@ function folhaDeImpressao(codigos, time){
       '<b>Antes de mandar imprimir:</b> papel '+(FL/10).toFixed(0)+' x '+(FA/10).toFixed(1).replace('.',',')+' cm, '+
       'sem margens, escala 100% (nada de "ajustar à página").<br>'+
       'Cada adesivo tem '+larg.toFixed(1).replace('.',',')+' x '+alt.toFixed(1).replace('.',',')+' mm · '+
-      porFolha+' por folha · '+codigos.length+' cartões = '+Math.ceil(codigos.length/porFolha)+' folha(s).'+
+      porFolha+' por folha · '+itens.length+' cartões = '+Math.ceil(itens.length/porFolha)+' folha(s).'+
+      (titulo ? '<br><b>'+titulo+'</b>' : '')+
     '</div>'+
-    paginar(cartoes, codigos.length, porFolha)+
+    paginar(cartoes, itens.length, porFolha)+
     '</body></html>';
 
   var w = window.open("","_blank");
@@ -1448,6 +1454,8 @@ $("b-datas").addEventListener("click",function(){
 });
 
 /* ---------- lista de todos os cartões ---------- */
+var CODIGOS_NA_TELA = [];
+
 $("cod-filtro").addEventListener("change",carregarCodigos);
 $("cod-time").addEventListener("change",carregarCodigos);
 
@@ -1464,6 +1472,7 @@ function carregarCodigos(){
         $("cod-qtd").textContent=""; return;
       }
       var d=r.data||[];
+      CODIGOS_NA_TELA = d;
       $("cod-qtd").textContent=d.length;
       if(!d.length){ t.innerHTML='<tr><td class="vazio">Nenhum cartão aqui.</td></tr>'; return; }
 
@@ -1504,7 +1513,7 @@ function carregarCodigos(){
     var d=(r.error?[]:(r.data||[]));
     if(!d.length){ t.innerHTML='<tr><td class="vazio">Nenhum lote ainda.</td></tr>'; return; }
     var cab=document.createElement("tr");
-    ["Lote","Sabor","Total","Livres","Usados","Gerado"].forEach(function(h,i){
+    ["Lote","Sabor","Total","Livres","Usados","Gerado",""].forEach(function(h,i){
       var c=document.createElement("th"); if(i>=2&&i<=4) c.className="num";
       c.textContent=h; cab.appendChild(c);
     });
@@ -1517,9 +1526,54 @@ function carregarCodigos(){
       tr.appendChild(td(x.livres,"num"));
       tr.appendChild(td(x.usados,"num"));
       tr.appendChild(td(dataCurta(x.criado_em),"zap"));
+
+      var cel=document.createElement("td");
+      var bt=document.createElement("button");
+      bt.className="btn vazio"; bt.style.cssText="padding:7px 11px;font-size:.68rem;width:auto";
+      bt.textContent="Imprimir";
+      bt.addEventListener("click",function(){ imprimirLote(x.lote, bt); });
+      cel.appendChild(bt); tr.appendChild(cel);
+
       t.appendChild(tr);
     });
   });
+}
+
+/* reimprime exatamente o que está na lista, com os filtros aplicados */
+$("b-cod-imprimir").addEventListener("click",function(){
+  if(!CODIGOS_NA_TELA.length){
+    $("g-erro").textContent="Não há cartões na lista para imprimir."; $("g-erro").hidden=false; return;
+  }
+  if(typeof QRCode === "undefined"){
+    $("g-erro").textContent="A biblioteca do QR não carregou. Recarregue a página com internet.";
+    $("g-erro").hidden=false; return;
+  }
+  $("g-erro").hidden=true;
+  var f=$("cod-filtro").value, tm=$("cod-time").value;
+  var rotulo = (f==="livres"?"Só livres":f==="usados"?"Só usados":"Todos") +
+               (tm ? " · "+(tm==="confete"?"Confete":"Granulado") : "");
+  folhaDeImpressao(CODIGOS_NA_TELA.map(function(x){
+    return {codigo:x.codigo, equipe:x.equipe};
+  }), rotulo);
+});
+
+/* reimprime um lote inteiro */
+function imprimirLote(lote, botao){
+  if(typeof QRCode === "undefined"){
+    $("g-erro").textContent="A biblioteca do QR não carregou. Recarregue a página com internet.";
+    $("g-erro").hidden=false; return;
+  }
+  botao.disabled=true; botao.textContent="…";
+  sb.rpc("painel_lista_codigos",{p_senha:senhaPainel,p_filtro:"todos",p_time:null,p_limite:2000})
+    .then(function(r){
+      botao.disabled=false; botao.textContent="Imprimir";
+      if(r.error){ $("g-erro").textContent="Não deu: "+(r.error.message||""); $("g-erro").hidden=false; return; }
+      var doLote=(r.data||[]).filter(function(x){ return x.lote===lote; });
+      if(!doLote.length){ $("g-erro").textContent="Lote vazio."; $("g-erro").hidden=false; return; }
+      $("g-erro").hidden=true;
+      folhaDeImpressao(doLote.map(function(x){ return {codigo:x.codigo, equipe:x.equipe}; }),
+                       "Lote "+lote+" · reimpressão");
+    });
 }
 
 $("b-cod-csv").addEventListener("click",function(){
