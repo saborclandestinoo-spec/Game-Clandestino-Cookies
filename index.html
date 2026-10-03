@@ -817,7 +817,7 @@ function novaRodada(){
   sortearMordidas(mordidasRodada);
 
   /* cada cookie novo vale mais que o anterior */
-  mult = Math.min(C.MULT_MAX||5, rodada);
+  mult = Math.min(C.MULT_MAX||16, Math.pow(2, rodada-1));
   var m=$("j-mult");
   m.textContent="x"+mult;
   m.classList.remove("subiu"); void m.offsetWidth; m.classList.add("subiu");
@@ -1050,7 +1050,8 @@ function terminar(){
   pararJogo();
   var T=TIMES[timeAtual], teto=C.TETO_PONTOS||300;
   var porMordida=C.PONTOS_POR_MORDIDA||0.5, porCookie=C.BONUS_POR_COOKIE_COMIDO||10;
-  pts = Math.min(teto, Math.round(mordidasFeitas*porMordida) + comidos*porCookie);
+  var piso = C.PISO_PONTOS||30;
+  pts = Math.max(piso, Math.min(teto, Math.round(mordidasFeitas*porMordida) + comidos*porCookie));
   var bonus=C.BONUS_POR_COOKIE||150, total=pts+bonus;
 
   $("f-time").textContent="Time "+T.nome;
