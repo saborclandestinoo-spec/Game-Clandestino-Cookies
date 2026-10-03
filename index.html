@@ -525,14 +525,14 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
         </div>
         <div>
           <label for="g-qtd">Quantos</label>
-          <input id="g-qtd" type="number" min="1" max="200" value="30">
+          <input id="g-qtd" type="number" min="1" max="500" value="50">
         </div>
       </div>
       <button class="btn" id="b-gerar" style="margin-top:10px">Gerar e imprimir</button>
       <p class="erro" id="g-erro" hidden></p>
       <p class="nota" id="g-feito" hidden style="color:var(--dourado)"></p>
 
-      <p class="nota">Imprima em papel comum e corte. Guarde os dois sabores em montes separados no balcão.</p>
+      <p class="nota">A folha sai no tamanho do adesivo configurado (hoje 30 × 44,5 cm, 50 por folha). Guarde os dois sabores em montes separados no balcão.</p>
     </div>
 
     <div class="bloco">
@@ -1290,7 +1290,7 @@ $("b-gerar").addEventListener("click",function(){
   var time=$("g-time").value, qtd=parseInt($("g-qtd").value,10)||0;
   var b=this;
   $("g-erro").hidden=true; $("g-feito").hidden=true;
-  if(qtd<1||qtd>200){ $("g-erro").textContent="Escolha entre 1 e 200 cartões."; $("g-erro").hidden=false; return; }
+  if(qtd<1||qtd>500){ $("g-erro").textContent="Escolha entre 1 e 500 cartões."; $("g-erro").hidden=false; return; }
 
   /* sem a biblioteca de QR o cartão sai sem código e não serve pra nada */
   if(typeof QRCode === "undefined"){
@@ -1317,52 +1317,94 @@ $("b-gerar").addEventListener("click",function(){
 });
 
 function folhaDeImpressao(codigos, time){
-  var base=location.origin+location.pathname;
-  var cor = time==="confete" ? "#FF1F1F" : "#D4A76A";
-  var nome = time==="confete" ? "CONFETE" : "GRANULADO";
+  var base = location.origin + location.pathname;
+  var cor  = time==="confete" ? "#FF1F1F" : "#D4A76A";
+  var nome = time==="confete" ? "CONFETE"  : "GRANULADO";
+
+  /* medidas da folha, em milimetros */
+  var FL = C.ADESIVO_FOLHA_LARGURA || 300;
+  var FA = C.ADESIVO_FOLHA_ALTURA  || 445;
+  var CO = C.ADESIVO_COLUNAS       || 5;
+  var LI = C.ADESIVO_LINHAS        || 10;
+  var MG = C.ADESIVO_MARGEM        || 5;
+  var ES = C.ADESIVO_ESPACO        || 3;
+
+  var larg = (FL - 2*MG - (CO-1)*ES) / CO;
+  var alt  = (FA - 2*MG - (LI-1)*ES) / LI;
+  var porFolha = CO * LI;
+
+  /* o QR ocupa a altura util do adesivo, o texto fica ao lado */
+  var qr   = Math.min(alt - 6, larg * 0.56);
+  var texto = larg - qr - 9;
 
   var cartoes = codigos.map(function(c){
-    var url = base+"?c="+c;
-    var img = qrDataUrl(url);
-    return '<div class="c">'+
-             '<div class="t" style="color:'+cor+'">TIME '+nome+'</div>'+
-             (img?'<img src="'+img+'">':'<div class="semqr">QR NÃO GERADO — NÃO USE ESTE CARTÃO</div>')+
-             '<div class="cod">'+c+'</div>'+
-             '<div class="p">Aponte a câmera e alimente o Pancho</div>'+
-             '<div class="r">Vale 1 partida · até 12/10</div>'+
+    var img = qrDataUrl(base + "?c=" + c);
+    return '<div class="a">' +
+             (img ? '<img src="'+img+'">' : '<div class="semqr">SEM QR</div>') +
+             '<div class="t">' +
+               '<div class="tm">TIME<br>'+nome+'</div>' +
+               '<div class="cd">'+c+'</div>' +
+               '<div class="vl">vale 1 partida</div>' +
+             '</div>' +
            '</div>';
   }).join("");
 
   var html =
     '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'+
-    '<title>Cartões '+nome+' — '+codigos.length+' unidades</title><style>'+
-    '@page{size:A4;margin:8mm}'+
-    'body{margin:0;font-family:system-ui,Arial,sans-serif;background:#fff;color:#000}'+
-    '.topo{padding:6mm 0;text-align:center;font-size:11pt}'+
-    '.topo b{color:'+cor+'}'+
-    '.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}'+
-    '.c{border:1.5pt dashed #999;border-radius:3mm;padding:4mm 3mm;text-align:center;'+
-       'break-inside:avoid;page-break-inside:avoid;background:#000;color:#fff}'+
-    '.c .t{font-size:9pt;font-weight:800;letter-spacing:.14em;margin-bottom:2mm}'+
-    '.c img{width:30mm;height:30mm;display:block;margin:0 auto;background:#fff;padding:1.5mm}'+
-    '.c .cod{font-family:ui-monospace,monospace;font-size:13pt;font-weight:700;'+
-            'letter-spacing:.14em;margin-top:2mm}'+
-    '.c .p{font-size:7pt;margin-top:1.5mm;color:#ccc}'+
-    '.c .r{font-size:6.5pt;margin-top:1mm;color:#888}'+
-    '.c .semqr{font-size:6pt;word-break:break-all;color:#ccc}'+
+    '<title>Adesivos '+nome+' — '+codigos.length+' unidades</title><style>'+
+    '@page{size:'+FL+'mm '+FA+'mm;margin:0}'+
+    'html,body{margin:0;padding:0;background:#fff;font-family:system-ui,Arial,sans-serif;color:#000}'+
+    '.folha{width:'+FL+'mm;padding:'+MG+'mm;box-sizing:border-box;'+
+           'display:grid;grid-template-columns:repeat('+CO+','+larg.toFixed(2)+'mm);'+
+           'grid-auto-rows:'+alt.toFixed(2)+'mm;gap:'+ES+'mm;'+
+           'page-break-after:always;break-after:page}'+
+    '.folha:last-child{page-break-after:auto;break-after:auto}'+
+    '.a{width:'+larg.toFixed(2)+'mm;height:'+alt.toFixed(2)+'mm;background:#000;color:#fff;'+
+       'border-radius:2.5mm;display:flex;align-items:center;gap:2mm;'+
+       'padding:0 3mm;box-sizing:border-box;overflow:hidden;'+
+       'break-inside:avoid;page-break-inside:avoid}'+
+    '.a img{width:'+qr.toFixed(2)+'mm;height:'+qr.toFixed(2)+'mm;'+
+           'background:#fff;padding:1mm;border-radius:1mm;box-sizing:border-box;flex:none}'+
+    '.a .t{width:'+texto.toFixed(2)+'mm;text-align:center;line-height:1.1}'+
+    '.a .tm{font-size:5.5pt;font-weight:800;letter-spacing:.06em;color:'+cor+'}'+
+    '.a .cd{font-family:ui-monospace,"Courier New",monospace;font-size:10pt;font-weight:700;'+
+           'letter-spacing:.06em;margin:1mm 0}'+
+    '.a .vl{font-size:4.6pt;color:#aaa}'+
+    '.a .semqr{width:'+qr.toFixed(2)+'mm;height:'+qr.toFixed(2)+'mm;background:#fff;color:#c00;'+
+              'font-size:5pt;display:flex;align-items:center;justify-content:center;flex:none}'+
+    '.aviso{padding:6mm;font-size:10pt;color:#444;line-height:1.5}'+
+    '.aviso b{color:#000}'+
     '@media print{.aviso{display:none}}'+
-    '.aviso{text-align:center;padding:4mm;font-size:10pt;color:#555}'+
     '</style></head><body>'+
-    '<div class="aviso">Confira a visualização e mande imprimir. Recorte nas linhas tracejadas.</div>'+
-    '<div class="topo">Guerra dos Cookies · <b>TIME '+nome+'</b> · '+codigos.length+' cartões · '+
-      new Date().toLocaleString("pt-BR")+'</div>'+
-    '<div class="grade">'+cartoes+'</div>'+
+    '<div class="aviso">'+
+      '<b>Antes de mandar imprimir:</b> papel '+(FL/10).toFixed(0)+' x '+(FA/10).toFixed(1).replace('.',',')+' cm, '+
+      'sem margens, escala 100% (nada de "ajustar à página").<br>'+
+      'Cada adesivo tem '+larg.toFixed(1).replace('.',',')+' x '+alt.toFixed(1).replace('.',',')+' mm · '+
+      porFolha+' por folha · '+codigos.length+' cartões = '+Math.ceil(codigos.length/porFolha)+' folha(s).'+
+    '</div>'+
+    paginar(cartoes, codigos.length, porFolha)+
     '</body></html>';
 
-  var w=window.open("","_blank");
-  if(!w){ $("g-erro").textContent="O navegador bloqueou a aba de impressão. Libere pop-ups e gere de novo."; $("g-erro").hidden=false; return; }
+  var w = window.open("","_blank");
+  if(!w){
+    $("g-erro").textContent="O navegador bloqueou a aba de impressão. Libere pop-ups e gere de novo.";
+    $("g-erro").hidden=false; return;
+  }
   w.document.write(html); w.document.close();
-  setTimeout(function(){ try{ w.print(); }catch(e){} }, 700);
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 900);
+}
+
+/* quebra os adesivos em folhas */
+function paginar(htmlCartoes, total, porFolha){
+  var temp=document.createElement("div");
+  temp.innerHTML=htmlCartoes;
+  var itens=Array.prototype.slice.call(temp.children);
+  var saida="";
+  for(var i=0;i<itens.length;i+=porFolha){
+    var bloco=itens.slice(i,i+porFolha).map(function(e){ return e.outerHTML; }).join("");
+    saida+='<div class="folha">'+bloco+'</div>';
+  }
+  return saida;
 }
 
 /* ---------- datas da campanha ---------- */
