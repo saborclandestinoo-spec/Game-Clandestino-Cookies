@@ -169,7 +169,7 @@ select{width:100%;padding:16px;border:2px solid var(--traco);background:#000;col
 .erro{color:var(--vermelho);font-size:.85rem;font-weight:500}
 
 /* jogo */
-#t-jogo{justify-content:space-between;gap:14px}
+#t-jogo{justify-content:space-between;gap:14px;position:relative}
 .hud{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .hud .big{font-family:var(--ui);font-weight:700;font-size:clamp(1.7rem,9vw,2.6rem);line-height:1;font-variant-numeric:tabular-nums}
 .tempo{height:14px;background:#000;border:2px solid var(--traco);overflow:hidden;position:relative}
@@ -244,6 +244,15 @@ select{width:100%;padding:16px;border:2px solid var(--traco);background:#000;col
   78%{opacity:1;transform:translate(-50%,-50%) scale(1)}
   100%{opacity:0;transform:translate(-50%,-78%) scale(.92)}
 }
+
+/* liga e desliga o som */
+#b-som{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);right:16px;z-index:9;
+  width:42px;height:42px;border-radius:50%;border:2px solid var(--traco);background:var(--preto-2);
+  color:var(--creme);font-size:1.1rem;line-height:1;cursor:pointer;padding:0}
+#b-som.mudo{color:var(--fosco);border-color:var(--traco)}
+#b-som.mudo::after{content:"";position:absolute;left:7px;right:7px;top:50%;height:2px;
+  background:var(--vermelho);transform:rotate(-38deg)}
+#b-som:focus-visible{outline:3px solid var(--dourado);outline-offset:3px}
 
 .migalha{position:absolute;border-radius:50%;background:#a5702f;pointer-events:none;
   animation:voa .6s ease-out forwards}
@@ -332,6 +341,17 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
       <div class="f fb" id="f-gr" style="width:50%"></div>
     </div>
     <div class="pct"><span class="cf" id="pc-cf">50%</span><span class="gr" id="pc-gr">50%</span></div>
+  </div>
+
+  <!-- aparece só quando a loja abre o jogo para a internet -->
+  <div class="bloco" id="placar-aberto" hidden>
+    <div class="rot">Jogo aberto</div>
+    <p class="premio-tit" style="margin:4px 0 12px">Escolha um lado e alimente o Pancho</p>
+    <div class="linha">
+      <button class="btn" id="b-joga-cf">Pelo Confete</button>
+      <button class="btn ouro" id="b-joga-gr">Pelo Granulado</button>
+    </div>
+    <p class="nota" id="aberto-nota">Sem cartão você soma pontos para o time. O voto que decide o cardápio é de quem compra o cookie na loja.</p>
   </div>
 
   <div class="campanha">
@@ -449,7 +469,8 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
     </div>
     <button id="alvo" aria-label="Dar uma mordida no cookie"><canvas id="cv" width="320" height="320"></canvas></button>
   </div>
-  <p class="nota" style="text-align:center" id="j-dica">Toca sem parar. Se parar, o Pancho perde o cookie.</p>
+  <button id="b-som" aria-label="Ligar ou desligar o som">♪</button>
+  <p class="nota" style="text-align:center;padding-right:54px;padding-left:54px" id="j-dica">Toca sem parar. Se parar, o Pancho perde o cookie.</p>
 </section>
 
 <!-- RESULTADO -->
@@ -498,6 +519,40 @@ textarea{width:100%;min-height:150px;background:#000;color:var(--fosco);border:2
       <p class="erro" id="dt-erro" hidden></p>
       <p class="nota" id="dt-feito" hidden style="color:var(--dourado)"></p>
       <p class="nota">A barra de progresso no placar segue estas datas. Vale para todos os celulares na hora.</p>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Cookies vendidos no balcão</div>
+      <p class="nota">Digite quantos cookies de cada sabor você já vendeu. Cada um vale 150 pontos e um voto no cardápio, igual a um cartão. Use isto para a venda do balcão que não passou por QR.</p>
+      <div class="linha">
+        <div>
+          <label for="vd-cf">Confete</label>
+          <input id="vd-cf" type="number" min="0" max="100000" step="1" value="0">
+        </div>
+        <div>
+          <label for="vd-gr">Granulado</label>
+          <input id="vd-gr" type="number" min="0" max="100000" step="1" value="0">
+        </div>
+      </div>
+      <div class="linha" style="margin-top:10px">
+        <button class="btn" id="b-vendas">Salvar total</button>
+        <button class="btn vazio" id="b-vendas-ler">Recarregar</button>
+      </div>
+      <p class="nota">“Salvar total” grava o número que está na caixinha, substituindo o anterior — não soma.</p>
+      <p class="erro" id="vd-erro" hidden></p>
+      <p class="nota" id="vd-feito" hidden style="color:var(--dourado)"></p>
+    </div>
+
+    <div class="bloco">
+      <div class="rot">Jogo aberto na internet</div>
+      <p class="nota">Ligado: qualquer pessoa que abrir o link joga na hora, sem cartão. Essas partidas somam pontos para o time, mas <strong>não contam como cookie vendido</strong> — o voto do cardápio continua sendo só de quem compra.</p>
+      <div class="linha" style="margin-top:4px">
+        <button class="btn" id="b-abrir">Abrir para todos</button>
+        <button class="btn vazio" id="b-fechar">Fechar (só cartão)</button>
+      </div>
+      <p class="nota" id="ab-estado" style="margin-top:10px">—</p>
+      <p class="erro" id="ab-erro" hidden></p>
+      <p class="nota">Cada celular pode jogar <strong id="ab-limite">3</strong> partidas abertas por dia, para ninguém sozinho inflar o placar.</p>
     </div>
 
     <div class="bloco">
@@ -702,20 +757,52 @@ function recusar(msg){
   ir("t-recusa");
 }
 
+/* ---------- jogo aberto: entra sem cartao ----------
+   A loja liga isso no painel. Sem cartao a pessoa joga, soma pontos de
+   toque para o time, mas nao vira cookie vendido — o voto do cardapio
+   continua sendo de quem compra. Limite por aparelho por dia para um
+   sozinho nao inflar o placar.                                        */
+function entrarAberto(t){
+  codigo=null; codigoGasto=null; timeAtual=t;
+  var lim = C.LIMITE_ABERTO_DIA || 3;
+  ir("t-checando");
+
+  sb.rpc("abertas_hoje",{p_device:deviceId}).then(function(r){
+    if(r.error){
+      /* banco sem a funcao nova: deixa jogar, mas sem o limite */
+      console.warn("[guerra] abertas_hoje falhou:", r.error);
+      abrirPorta(t, true); return;
+    }
+    var n = typeof r.data==="number" ? r.data : 0;
+    if(n >= lim){
+      $("bloq-txt").textContent = "Você já jogou "+n+(n===1?" vez":" vezes")+
+        " de graça hoje. Amanhã libera de novo. Comprando um cookie na loja você joga com cartão — e aí o seu sabor ganha um voto no cardápio.";
+      ir("t-bloqueio"); return;
+    }
+    abrirPorta(t, true);
+  });
+}
+
 /* ---------- porta do time ---------- */
-function abrirPorta(t){
+function abrirPorta(t, aberto){
   var T=TIMES[t];
   $("porta-tag").textContent="TIME "+T.nome;
   $("porta-tag").style.color=T.cor;
-  $("porta-txt").textContent=T.frase;
+  $("porta-txt").textContent = aberto
+    ? "Partida aberta: seus pontos vão para o time. O voto que decide o cardápio é do cookie comprado na loja."
+    : T.frase;
   $("porta-box").classList.toggle("g", t==="granulado");
   $("b-porta").className = "btn" + (t==="granulado" ? " ouro" : "");
   ir("t-porta");
 }
 $("b-porta").addEventListener("click",function(){
+  AUDIO.acordar();
   if(jogadorId){ gastarCodigo(); }
   else { $("ent-erro").hidden=true; ir("t-entrar"); setTimeout(function(){ try{$("i-nome").focus();}catch(e){} },150); }
 });
+
+$("b-joga-cf").addEventListener("click",function(){ AUDIO.acordar(); entrarAberto("confete"); });
+$("b-joga-gr").addEventListener("click",function(){ AUDIO.acordar(); entrarAberto("granulado"); });
 
 /* ---------- cadastro ---------- */
 $("i-zap").addEventListener("input",function(){
@@ -783,12 +870,122 @@ function gastarCodigo(){
     });
 }
 
+/* ---------- som ----------
+   Tudo sintetizado na hora: nenhum arquivo para baixar, nada para
+   carregar. O navegador so libera audio depois de um toque, entao o
+   contexto nasce no primeiro clique do jogador.                      */
+var AUDIO = (function(){
+  var ctx=null, mudo=false, mestre=null;
+
+  try{ mudo = ls("cc_mudo")==="1"; }catch(e){}
+
+  function ligar(){
+    if(ctx) { if(ctx.state==="suspended") ctx.resume(); return ctx; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    try{
+      ctx = new AC();
+      mestre = ctx.createGain();
+      mestre.gain.value = mudo ? 0 : 0.9;
+      mestre.connect(ctx.destination);
+    }catch(e){ ctx=null; }
+    return ctx;
+  }
+
+  function nota(freq, inicio, dur, tipo, vol){
+    if(!ctx) return;
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=tipo||"square"; o.frequency.setValueAtTime(freq, inicio);
+    g.gain.setValueAtTime(0, inicio);
+    g.gain.linearRampToValueAtTime(vol||0.25, inicio+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, inicio+dur);
+    o.connect(g); g.connect(mestre);
+    o.start(inicio); o.stop(inicio+dur+0.02);
+  }
+
+  /* estalo curto: o "croc" da mordida */
+  function croc(forca){
+    if(!ctx) return;
+    var t=ctx.currentTime, n=Math.floor(ctx.sampleRate*0.055);
+    var buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<n;i++){
+      var q=1-i/n;
+      d[i]=(Math.random()*2-1)*q*q;
+    }
+    var src=ctx.createBufferSource(); src.buffer=buf;
+    var f=ctx.createBiquadFilter(); f.type="bandpass";
+    f.frequency.value=900+Math.random()*700+(forca||0)*120;
+    f.Q.value=1.4;
+    var g=ctx.createGain(); g.gain.value=0.5;
+    src.connect(f); f.connect(g); g.connect(mestre);
+    src.start(t);
+  }
+
+  var API = {
+    /* chamado no primeiro toque do jogador */
+    acordar: function(){ ligar(); },
+
+    mordida: function(mult){
+      if(!ligar()) return;
+      croc(Math.log2(mult||1));
+      var t=ctx.currentTime;
+      nota(220 + (Math.log2(mult||1)*90) + Math.random()*40, t, 0.07, "triangle", 0.18);
+    },
+
+    cookieInteiro: function(){
+      if(!ligar()) return;
+      var t=ctx.currentTime;
+      [523,659,784,1047].forEach(function(f,i){
+        nota(f, t+i*0.075, 0.18, "square", 0.22);
+      });
+    },
+
+    contagem: function(ultimo){
+      if(!ligar()) return;
+      var t=ctx.currentTime;
+      if(ultimo){ nota(880, t, 0.26, "square", 0.3); nota(1320, t+0.03, 0.24, "square", 0.16); }
+      else nota(440, t, 0.13, "square", 0.24);
+    },
+
+    perigo: function(){
+      if(!ligar()) return;
+      var t=ctx.currentTime;
+      nota(160, t, 0.1, "sawtooth", 0.14);
+    },
+
+    fim: function(bom){
+      if(!ligar()) return;
+      var t=ctx.currentTime;
+      if(bom) [659,784,988,1319].forEach(function(f,i){ nota(f,t+i*0.1,0.3,"square",0.24); });
+      else    [392,330,262].forEach(function(f,i){ nota(f,t+i*0.13,0.35,"triangle",0.22); });
+    },
+
+    estaMudo: function(){ return mudo; },
+
+    alternar: function(){
+      mudo=!mudo;
+      try{ ls("cc_mudo", mudo?"1":"0"); }catch(e){}
+      if(mestre) mestre.gain.value = mudo ? 0 : 0.9;
+      if(!mudo){ ligar(); API.contagem(false); }
+      return mudo;
+    }
+  };
+  return API;
+})();
+
+(function(){
+  var b=$("b-som");
+  function pintar(){ b.classList.toggle("mudo", AUDIO.estaMudo()); }
+  pintar();
+  b.addEventListener("click",function(e){ e.stopPropagation(); AUDIO.alternar(); pintar(); });
+})();
+
 /* ---------- jogo: o urso come o cookie ----------
    Cada toque arranca uma mordida. A massa se regenera sozinha.
    Zerou o cookie → próximo, regenerando mais rápido.
    A massa voltou ao inteiro → acabou.                                   */
 var rodando=false, raf=0, tCont=0, ultimoQuadro=0;
-var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0, mult=1;
+var rodada=0, massa=1, mordidasRodada=0, regen=0, mordidasFeitas=0, tJogo=0, comidos=0, pts=0, fechaBoca=0, abreBoca=0, mult=1, ultimoAlerta=0;
 var codigo="", codigoGasto="";
 
 function cfgRodada(n){
@@ -843,8 +1040,8 @@ function contar(n){
   var v=n;
   tCont=setInterval(function(){
     v--;
-    if(v>0) d.textContent=v;
-    else if(v===0) d.textContent="COME!";
+    if(v>0){ d.textContent=v; AUDIO.contagem(false); }
+    else if(v===0){ d.textContent="COME!"; AUDIO.contagem(true); }
     else {
       clearInterval(tCont); d.remove();
       rodando=true; ultimoQuadro=performance.now(); loop();
@@ -867,7 +1064,10 @@ function loop(){
   desenhar();
   var b=$("j-barra");
   $("j-tempo").style.width=(massa*100).toFixed(1)+"%";
-  if(massa>0.82) b.classList.add("perigo"); else b.classList.remove("perigo");
+  if(massa>0.82){
+    if(!b.classList.contains("perigo")){ b.classList.add("perigo"); AUDIO.perigo(); }
+    if(agora-ultimoAlerta>900){ ultimoAlerta=agora; AUDIO.perigo(); }
+  } else b.classList.remove("perigo");
 
   raf=requestAnimationFrame(loop);
 }
@@ -883,6 +1083,7 @@ $("alvo").addEventListener("pointerdown",function(e){
   if(!rodando) return;
   e.preventDefault();
 
+  AUDIO.mordida(mult);
   massa -= 1/mordidasRodada;
   mordidasFeitas += mult;
   $("j-pts").textContent=mordidasFeitas;
@@ -895,6 +1096,7 @@ $("alvo").addEventListener("pointerdown",function(e){
 
   if(massa<=0){
     comidos++;
+    AUDIO.cookieInteiro();
     $("j-dica").textContent = rodada>=4 ? "Esse vem mais teimoso." : "Mais um. Esse volta mais rápido.";
     novaRodada();
     bannerFase();
@@ -1052,7 +1254,9 @@ function terminar(){
   var porMordida=C.PONTOS_POR_MORDIDA||0.5, porCookie=C.BONUS_POR_COOKIE_COMIDO||10;
   var piso = C.PISO_PONTOS||30;
   pts = Math.max(piso, Math.min(teto, Math.round(mordidasFeitas*porMordida) + comidos*porCookie));
-  var bonus=C.BONUS_POR_COOKIE||150, total=pts+bonus;
+  /* sem cartao nao houve compra: nenhum bonus de cookie */
+  var bonus = codigoGasto ? (C.BONUS_POR_COOKIE||150) : 0;
+  var total = pts+bonus;
 
   $("f-time").textContent="Time "+T.nome;
   $("f-time").style.color=T.cor;
@@ -1060,12 +1264,15 @@ function terminar(){
   $("f-pts").style.color=T.cor;
   $("f-det").textContent = mordidasFeitas+" pontos no jogo, em "+comidos+
     (comidos===1?" cookie inteiro":" cookies inteiros")+", viraram "+pts+
-    " para o time, mais "+bonus+" pelo cookie que você comprou.";
+    " para o time"+(bonus
+      ? ", mais "+bonus+" pelo cookie que você comprou."
+      : ". Comprando um cookie na loja você ganha 150 pontos de bônus e um voto no cardápio.");
   $("f-msg").textContent = pts>=teto ? "Pontuação máxima!" :
                            comidos>=5 ? "Pancho tá cheio!" :
                            comidos>=3 ? "Comeu bem!" :
                            comidos>=1 ? "Boa mordida!" : "Valeu pela força!";
   $("f-erro").hidden=true;
+  AUDIO.fim(comidos>=1);
   ir("t-fim");
 
   salvarJogada(pts, true);
@@ -1075,12 +1282,25 @@ function terminar(){
    dados), refaz o cadastro uma vez e tenta de novo, sem perder os pontos.     */
 function salvarJogada(valor, podeRefazer){
   sb.from("jogadas")
-    .insert({ jogador_id:jogadorId, time:timeAtual, pontos:valor, device_id:deviceId })
+    .insert({ jogador_id:jogadorId, time:timeAtual, pontos:valor, device_id:deviceId,
+              aberta: !codigoGasto })
     .then(function(r){
       if(!r.error){ $("f-erro").hidden=true; return; }
       console.error("[guerra] erro ao salvar jogada:", r.error);
 
       var m=(r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||"");
+
+      /* banco antigo, sem a coluna "aberta": grava do jeito de antes */
+      if(/aberta/i.test(m) && /column|schema cache|does not exist/i.test(m)){
+        sb.from("jogadas")
+          .insert({ jogador_id:jogadorId, time:timeAtual, pontos:valor, device_id:deviceId })
+          .then(function(r2){
+            if(!r2.error){ $("f-erro").hidden=true; return; }
+            erroSalvar(r2.error, false);
+          });
+        return;
+      }
+
       var sumiu = r.error.code==="23503" || /foreign key|jogador_id|not present in table/i.test(m);
 
       if(sumiu && podeRefazer && jogadorNome){
@@ -1153,7 +1373,20 @@ function carregarPlacar(){
   sb.rpc("datas_campanha").then(function(r){
     if(!r.error && r.data && r.data[0]) DATAS = r.data[0];
     pintarCampanha();
+    pintarAberto();
   });
+}
+
+/* ---------- mostra ou esconde o convite do jogo aberto ---------- */
+function pintarAberto(){
+  var box=$("placar-aberto"); if(!box) return;
+  var on = !!(DATAS && DATAS.aberto);
+
+  /* depois da apuracao ninguem joga mais, nem de graca */
+  var dFim = (DATAS && DATAS.apuracao) || C.DATA_APURACAO || "2026-10-12";
+  if(new Date() > new Date(dFim+"T23:59:59-03:00")) on=false;
+
+  box.hidden = !on;
 }
 
 /* ---------- quanto da campanha já passou ---------- */
@@ -1421,13 +1654,86 @@ function carregarDatas(){
       $("dt-erro").textContent = /function|schema cache|does not exist/i.test((r.error&&r.error.message)||"")
         ? "Rode a parte nova do painel.sql no Supabase."
         : "Não deu pra ler as datas.";
-      $("dt-erro").hidden=false; return;
+      $("dt-erro").hidden=false;
+      pintarEstadoAberto(null);
+      return;
     }
     $("dt-erro").hidden=true;
-    $("dt-ini").value = r.data[0].inicio   || "";
-    $("dt-fim").value = r.data[0].apuracao || "";
+    var d=r.data[0];
+    $("dt-ini").value = d.inicio   || "";
+    $("dt-fim").value = d.apuracao || "";
+
+    /* o mesmo retorno traz as vendas do balcao e o modo aberto */
+    DATAS = d;
+    if("vendas_confete"   in d) $("vd-cf").value = d.vendas_confete;
+    if("vendas_granulado" in d) $("vd-gr").value = d.vendas_granulado;
+    pintarEstadoAberto("aberto" in d ? !!d.aberto : null);
+    pintarAberto();
   });
 }
+
+/* ---------- vendas do balcao ---------- */
+$("b-vendas-ler").addEventListener("click",carregarDatas);
+
+$("b-vendas").addEventListener("click",function(){
+  var cf=parseInt($("vd-cf").value,10), gr=parseInt($("vd-gr").value,10), b=this;
+  $("vd-erro").hidden=true; $("vd-feito").hidden=true;
+
+  if(isNaN(cf)||isNaN(gr)){ $("vd-erro").textContent="Preencha os dois números."; $("vd-erro").hidden=false; return; }
+  if(cf<0||gr<0){ $("vd-erro").textContent="Não existe venda negativa."; $("vd-erro").hidden=false; return; }
+  if(cf>100000||gr>100000){ $("vd-erro").textContent="Número alto demais."; $("vd-erro").hidden=false; return; }
+
+  b.disabled=true; b.textContent="Salvando…";
+  sb.rpc("salvar_vendas",{p_senha:senhaPainel,p_confete:cf,p_granulado:gr}).then(function(r){
+    b.disabled=false; b.textContent="Salvar total";
+    if(r.error){
+      var m=r.error.message||"";
+      $("vd-erro").textContent = /function|schema cache|does not exist/i.test(m)
+        ? "O banco ainda não tem isso. Rode o aberto.sql no Supabase."
+        : /vendas_negativas/.test(m) ? "Não existe venda negativa."
+        : /vendas_altas_demais/.test(m) ? "Número alto demais."
+        : "Não deu: "+m;
+      $("vd-erro").hidden=false; return;
+    }
+    $("vd-feito").textContent=r.data;
+    $("vd-feito").hidden=false;
+    carregarPainel();
+  });
+});
+
+/* ---------- abrir o jogo para a internet ---------- */
+function pintarEstadoAberto(on){
+  var e=$("ab-estado");
+  $("ab-limite").textContent = C.LIMITE_ABERTO_DIA || 3;
+  if(on===null){ e.textContent="Rode o aberto.sql no Supabase para usar isto."; e.style.color=""; return; }
+  e.textContent = on ? "Agora está ABERTO: qualquer um joga pelo link."
+                     : "Agora está FECHADO: só joga quem tem cartão.";
+  e.style.color = on ? "var(--dourado)" : "";
+  $("b-abrir").disabled = !!on;
+  $("b-fechar").disabled = !on;
+}
+
+function trocarModo(on){
+  $("ab-erro").hidden=true;
+  var b = on ? $("b-abrir") : $("b-fechar");
+  var rot = b.textContent;
+  b.disabled=true; b.textContent="Salvando…";
+
+  sb.rpc("salvar_modo_aberto",{p_senha:senhaPainel,p_aberto:on}).then(function(r){
+    b.textContent=rot; b.disabled=false;
+    if(r.error){
+      $("ab-erro").textContent = /function|schema cache|does not exist/i.test(r.error.message||"")
+        ? "O banco ainda não tem isso. Rode o aberto.sql no Supabase."
+        : "Não deu: "+(r.error.message||"");
+      $("ab-erro").hidden=false; return;
+    }
+    pintarEstadoAberto(on);
+    DATAS = DATAS || {}; DATAS.aberto = on;
+    pintarAberto();
+  });
+}
+$("b-abrir").addEventListener("click",function(){ trocarModo(true); });
+$("b-fechar").addEventListener("click",function(){ trocarModo(false); });
 
 $("b-datas").addEventListener("click",function(){
   var ini=$("dt-ini").value, fim=$("dt-fim").value, b=this;
@@ -1623,9 +1929,15 @@ function carregarPainel(){
   sb.rpc("painel_resumo",{p_senha:senhaPainel}).then(function(r){
     var box=$("pn-cards"); box.innerHTML="";
     var d=(r.data&&r.data[0])||{};
-    [["Cadastros",d.jogadores||0],["Jogadas",d.jogadas||0],["Jogadas hoje",d.jogadas_hoje||0],
-     ["Aparelhos",d.aparelhos||0],["Cookies confete",d.cookies_confete||0],
-     ["Cookies granulado",d.cookies_granulado||0]].forEach(function(c){
+    var cartoes=[["Cadastros",d.jogadores||0],["Jogadas",d.jogadas||0],["Jogadas hoje",d.jogadas_hoje||0],
+     ["Aparelhos",d.aparelhos||0],["Cartões confete",d.cookies_confete||0],
+     ["Cartões granulado",d.cookies_granulado||0]];
+    if("jogadas_abertas" in d) cartoes.push(["Jogadas abertas",d.jogadas_abertas||0]);
+    if("balcao_confete" in d){
+      cartoes.push(["Balcão confete",d.balcao_confete||0]);
+      cartoes.push(["Balcão granulado",d.balcao_granulado||0]);
+    }
+    cartoes.forEach(function(c){
       var e=document.createElement("div"); e.className="cartao";
       e.innerHTML='<div class="rot">'+c[0]+'</div><div class="n">'+c[1]+'</div>';
       box.appendChild(e);
